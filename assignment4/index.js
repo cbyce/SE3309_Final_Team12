@@ -1,6 +1,6 @@
 const express = require('express');
 const newProductsConn = require('./js/conn/products.js');
-
+//INCORPERATE PROMISES ?
 const app = express();
 
 app.use(express.static('static'));
@@ -93,6 +93,13 @@ function getPageBase(pageTitle) {
             };
 }
 
+//Change to incorperate error code display
+function getErrPage() {
+    let base = getpageBase('Error'); 
+
+    return (base.head + 'An Error Has Occured, Please try again later.' + base.foot);
+}
+
 app.get('/products', (req,res) => {
     let base = getPageBase("Products");
     let conn = newProductsConn();
@@ -101,8 +108,34 @@ app.get('/products', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
+                    res.send(getErrPage());
                 } else {
-                    res.send(base.head + JSON.stringify(rows) + base.foot);
+                    let content = '<div class="product-container">';
+
+                    for(r of rows)
+                    {
+                        content +=  '<div class="product-row">'+
+                                        '<div class="product-col left">'+
+                                            '<div style="flex-direction: column;">'+
+                                                '<div class="product-name">' + r.productName+ '</div>'+
+                                                '<div class="product-id">' + r.productID + '</div>'+
+                                            '</div>'+
+                                        '</div>'+
+                                        '<div class="product-col center">'+
+                                            '<div class="product-type">' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
+                                        '</div>'+
+                                        '<div class="product-col right">'+
+                                            '<div class="product-qty">Stock: ' + r.quantity + '</div>'+
+                                        '</div>'+
+                                    '</div>';
+                    }
+
+                    content += '</div>';
+                    
+                    
+                    
+                    
+                    res.send(base.head + content + base.foot);
                 }
             } );
 
