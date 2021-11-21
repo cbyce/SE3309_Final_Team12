@@ -1,0 +1,103 @@
+:root{
+    --dark-blue:#000050;
+    --med-blue: #8a8aff;
+
+    --v-light-green: rgb(150, 235, 150);
+    --light-green: rgb(95, 165,95);
+    --med-green: rgb(75,145,75);
+    --dark-green: rgb(55, 125, 55);
+
+    /*--- c colors are followed by what they contrast---*/
+    --c-dark-blue: rgb(255,250,240); /* Very light orange */
+    --c-med-green: rgb(255, 245, 255); /* Very light pink */
+
+}
+/*----- Buttons -----*/
+.btn-round{
+    font-size: 100%;
+
+    height: 35px;
+    width: 35px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 50%;
+}
+/*----- Default Page CSS -----*/
+.default-page{
+    padding: 1rem;
+
+    width: 100%;
+
+    display: flex;
+
+    padding: 1rem;
+}
+
+
+/*------ Nav and Footer css -----*/
+.nav-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.nav-left {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+.nav-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+.page-nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 0.85rem 1.5rem;
+
+    width:100%;
+
+    background-color: var(--med-green);
+    color: var(--c-med-green);
+}
+/* Buttons */
+.nav-btn.active {
+    background-color: var(--c-med-green);
+    color: var(--med-green);
+}
+.nav-btn {
+    color: var(--c-med-green);;
+}
+.nav-btn:hover{
+    cursor:pointer;
+    color: var(--v-light-green);
+    text-decoration: none;
+}
+.line-seperator{
+    height: 23px;
+    width: 2px;
+
+    margin: 0 1.25rem;
+
+    background-color: var(--c-med-green);;
+    border-radius: 5px;
+}
+/* Header CSS */
+.header{
+    width: 33.3333%;
+    height: 100%;
+}
+/* Footer CSS */
+.footer-pos{
+    position: absolute;
+    bottom: 0;
+}
+.footer{
+    width: 33.33333%;
+}
