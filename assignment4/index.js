@@ -71,7 +71,7 @@ function getPageBase(pageTitle) {
                             '</div>'+
                             '<div class="default-page">',
                 "foot": '</div>'+
-                        '<div class="page-nav footer-pos">'+
+                        '<div class="footer-pos">'+
                             '<div class="footer nav-left">'+
                                 '<i class="far fa-copyright"></i> &nbsp; Empoyee Portal'+
                             '</div>'+
@@ -104,7 +104,7 @@ app.get('/products', (req,res) => {
     let base = getPageBase("Products");
     let conn = newProductsConn();
     conn.connect();
-    conn.query(`SELECT * FROM Products`
+    conn.query(`SELECT * FROM Products ORDER BY productName ASC`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
