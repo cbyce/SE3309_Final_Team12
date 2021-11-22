@@ -107,16 +107,16 @@ app.get('/products', (req,res) => {
     let content =   '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">'+
                         '<div class="row" style="padding: 0.5em">'+
                             '<div class="col-4">'+
-                                '<label for="idBox">ID:</label><br>'+
-                                '<input type="text" id="idBox" value="">'+
+                                '<label for="idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
+                                '<input type="text" id="idBox" value="" style="width:100%; cursor: not-allowed" readonly>'+
                             '</div>'+
                             '<div class="col-4">'+
                                 '<label for="nameBox">Name:</label><br>'+
-                                '<input type="text" id="nameBox" value="">'+
+                                '<input type="text" id="nameBox" value="" style="width:100%">'+
                             '</div>'+
                             '<div class="col-4">'+
                                 '<label for="typeBox">Type:</label><br>'+
-                                '<select id="typeBox" style="width: 181px; height: 30px;">'+
+                                '<select id="typeBox" style="width: 100%; height: 30px;">'+
                                     '<option value="flower">Flower</option>'+
                                     '<option value="vape">Vape</option>'+
                                     '<option value="edible">Edible</option>'+
@@ -128,19 +128,20 @@ app.get('/products', (req,res) => {
                         '<div class="row" style="padding: 0.5em">'+
                             '<div class="col-4">'+
                                 '<label for="qtyBox">Quantity:</label><br>'+
-                                '<input type="number" id="qtyBox" min="0">'+
+                                '<input type="number" id="qtyBox" min="0" style="width:100%">'+
                             '</div>'+
                             '<div class="col-4">'+
                                 '<label for="soldBox">Quantity Sold:</label><br>'+
-                                '<input type="number" id="soldBox" min="0">'+
+                                '<input type="number" id="soldBox" min="0" style="width:100%">'+
                             '</div>'+
                             '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
-                                '<button type="button" class="btn btn-danger" style="width: 85px">Delete</button>'+
-                                '<button type="button" class="btn btn-primary" style="width: 85px">Update</button>'+
-                                '<button type="button" class="btn btn-success" style="width: 85px">Add</button>'+
+                                '<button id="prodDelBtn" type="button" class="btn btn-danger" style="width: 85px" onclick="deleteProduct();">Delete</button>'+
+                                '<button id="prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct();">Update</button>'+
+                                '<button id="prodAddBtn" type="button" class="btn btn-success" style="width: 85px" onclick="insertProduct();">Add</button>'+
                             '</div>'+
                         '</div>'+
                     '</div>';
+
     let base = getPageBase("Products");
     let conn = newProductsConn();
     conn.connect();
@@ -219,22 +220,58 @@ app.post('/products/info', (req,res) => {
     conn.end();
 });
 app.post('/products/update', (req,res) => {
-    let cam = JSON.parse(req.headers.data);
+    let data = JSON.parse(req.headers.data);
 
-    res.json(cam);
-    /* let conn = newProductsConn();
+    let conn = newProductsConn();
     conn.connect();
-    conn.query(`UPDATE Products SET ` + ` WHERE productID = ` + `;`
+    
+    conn.query(`UPDATE Products SET productName="` + data.name + `", productType="` + data.type + `", quantity=` + data.qty + `, quantitySold=` + data.sold + ` WHERE productID = "` + data.id + `";`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.json({"msg": "" + " was NOT successfully added to the database. Please retry."});
+                    res.json({"msg": "" + data.id + " (" + data.name + ") was NOT successfully updated in the database. Please retry."});
                 } else {
-                    res.json({"msg": "" + " was successfully added to the database."});
+                    res.json({"msg": "" + data.id + " (" + data.name + ") was successfully updated in the database. Refresh the page to see changes in the table."});
                 }
             } );
 
-    conn.end(); */
+    conn.end();
+});
+app.post('/products/delete', (req,res) => {
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newProductsConn();
+    conn.connect();
+    
+    conn.query(`DELETE FROM Products WHERE productID = "` + data.id + `";`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"msg": "" + data.id + ") was NOT successfully deleted from the database. Please retry."});
+                } else {
+                    res.json({"msg": "" + data.id + " was successfully deleted from the database. Refresh the page to see changes in the table."});
+                }
+            } );
+
+    conn.end(); 
+});
+app.post('/products/insert', (req,res) => {
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newProductsConn();
+    conn.connect();
+    
+    conn.query(`INSERT INTO Products VALUES ( "` + data.id + `", "` + data.name + `", "` + data.type + `", ` + data.qty + `, ` + data.sold + `);`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"msg": "" + data.id + " (" + data.name + ") was NOT successfully added to the database. Please retry."});
+                } else {
+                    res.json({"msg": "" + data.id + " (" + data.name + ") was successfully added to the database. Refresh the page to see changes in the table."});
+                }
+            } );
+
+    conn.end(); 
 });
 
 //Hosted on port 2000
