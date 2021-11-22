@@ -64,41 +64,30 @@
     <div class="default-page">
         <div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">
             <div class="row" style="padding: 0.5em">
-                <div class="col-4">
-                    <label for="idBox">ID:</label><br>
-                    <input type="text" id="idBox" value="">
+                <div class="col-6">
+                    <label for="resutCountBox">Results Per Page:</label>
+                    <select id="resutCountBox" style="padding: 5px;">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
                 </div>
-                <div class="col-4">
-                    <label for="nameBox">Name:</label><br>
-                    <input type="text" id="nameBox" value="">
-                </div>
-                <div class="col-4">
-                    <label for="typeBox">Type:</label><br>
-                    <select id="typeBox" style="width: 181px; height: 30px;">
-                        <option value="flower">Flower</option>
-                        <option value="vape">Vape</option>
-                        <option value="edible">Edible</option>
-                        <option value="oil">Oil</option>
-                        <option value="other">Other</option>
+                <div class="col-6">
+                    <label for="sortBox">Sort By:</label>
+                    <select id="sortBox" style="padding: 5px">
+                        <option value="name" selected>Name</option>
+                        <option value="hourlyPay">Pay</option>
+                        <option value="noOfSales">Sales</option>
+                        <option value="revenueGenerated">Revenue</option>
                     </select>
                 </div>
             </div>
             <div class="row" style="padding: 0.5em">
-                <div class="col-4">
-                    <label for="qtyBox">Quantity:</label><br>
-                    <input type="number" id="qtyBox" min="0">
-                </div>
-                <div class="col-4">
-                    <label for="soldBox">Quantity Sold:</label><br>
-                    <input type="number" id="soldBox" min="0">
-                </div>
-                <div class="col-4" style="display:flex; justify-content: space-between; align-items:end">
-                    <button type="button" class="btn btn-danger" style="width: 85px">Delete</button>
-                    <button type="button" class="btn btn-primary" style="width: 85px">Update</button>
-                    <button type="button" class="btn btn-success" style="width: 85px">Add</button>
+                <div class="col-12">
+                    
                 </div>
             </div>
-            
         </div>
     </div>
     
