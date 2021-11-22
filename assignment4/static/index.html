@@ -62,21 +62,43 @@
     </div>
 
     <div class="default-page">
-        <div class="product-container">
-            <div class="product-row">
-                <div class="product-col left">
-                    <div style="flex-direction: column;">
-                        <div class="product-name">Name</div>
-                        <div class="product-id">ID</div>
-                    </div>
+        <div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">
+            <div class="row" style="padding: 0.5em">
+                <div class="col-4">
+                    <label for="idBox">ID:</label><br>
+                    <input type="text" id="idBox" value="">
                 </div>
-                <div class="product-col center">
-                    <div class="product-type">Type</div>
+                <div class="col-4">
+                    <label for="nameBox">Name:</label><br>
+                    <input type="text" id="nameBox" value="">
                 </div>
-                <div class="product-col right">
-                    <div class="product-qty">QTY</div>
+                <div class="col-4">
+                    <label for="typeBox">Type:</label><br>
+                    <select id="typeBox" style="width: 181px; height: 30px;">
+                        <option value="flower">Flower</option>
+                        <option value="vape">Vape</option>
+                        <option value="edible">Edible</option>
+                        <option value="oil">Oil</option>
+                        <option value="other">Other</option>
+                    </select>
                 </div>
             </div>
+            <div class="row" style="padding: 0.5em">
+                <div class="col-4">
+                    <label for="qtyBox">Quantity:</label><br>
+                    <input type="number" id="qtyBox" min="0">
+                </div>
+                <div class="col-4">
+                    <label for="soldBox">Quantity Sold:</label><br>
+                    <input type="number" id="soldBox" min="0">
+                </div>
+                <div class="col-4" style="display:flex; justify-content: space-between; align-items:end">
+                    <button type="button" class="btn btn-danger" style="width: 85px">Delete</button>
+                    <button type="button" class="btn btn-primary" style="width: 85px">Update</button>
+                    <button type="button" class="btn btn-success" style="width: 85px">Add</button>
+                </div>
+            </div>
+            
         </div>
     </div>
     

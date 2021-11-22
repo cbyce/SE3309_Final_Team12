@@ -25,6 +25,9 @@ function getPageBase(pageTitle) {
                         
                             '<!-- Personal Style Sheets-->'+
                             '<link rel="stylesheet" href="./css/index.css">'+
+
+                            '<!-- Personal Code -->'+
+                            '<script src="./js/productPage.js"></script>'+ //CHANGE LATER TO HAVE SELECT HANDLE THIS BASED ON PAGE NAME
                         
                             '<!-- Tab icon -->'+
                             '<link rel="icon" href="./imgs/weed-leaf-leafcircle.png">'+
@@ -101,6 +104,43 @@ function getErrPage() {
 }
 
 app.get('/products', (req,res) => {
+    let content =   '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">'+
+                        '<div class="row" style="padding: 0.5em">'+
+                            '<div class="col-4">'+
+                                '<label for="idBox">ID:</label><br>'+
+                                '<input type="text" id="idBox" value="">'+
+                            '</div>'+
+                            '<div class="col-4">'+
+                                '<label for="nameBox">Name:</label><br>'+
+                                '<input type="text" id="nameBox" value="">'+
+                            '</div>'+
+                            '<div class="col-4">'+
+                                '<label for="typeBox">Type:</label><br>'+
+                                '<select id="typeBox" style="width: 181px; height: 30px;">'+
+                                    '<option value="flower">Flower</option>'+
+                                    '<option value="vape">Vape</option>'+
+                                    '<option value="edible">Edible</option>'+
+                                    '<option value="oil">Oil</option>'+
+                                    '<option value="other">Other</option>'+
+                                '</select>'+
+                            '</div>'+
+                        '</div>'+
+                        '<div class="row" style="padding: 0.5em">'+
+                            '<div class="col-4">'+
+                                '<label for="qtyBox">Quantity:</label><br>'+
+                                '<input type="number" id="qtyBox" min="0">'+
+                            '</div>'+
+                            '<div class="col-4">'+
+                                '<label for="soldBox">Quantity Sold:</label><br>'+
+                                '<input type="number" id="soldBox" min="0">'+
+                            '</div>'+
+                            '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
+                                '<button type="button" class="btn btn-danger" style="width: 85px">Delete</button>'+
+                                '<button type="button" class="btn btn-primary" style="width: 85px">Update</button>'+
+                                '<button type="button" class="btn btn-success" style="width: 85px">Add</button>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
     let base = getPageBase("Products");
     let conn = newProductsConn();
     conn.connect();
@@ -110,11 +150,30 @@ app.get('/products', (req,res) => {
                     console.log(err);
                     res.send(getErrPage());
                 } else {
-                    let content = '<div class="product-container">';
+                    content += '<div class="product-container">';
+                    let icon;
 
                     for(r of rows)
                     {
-                        content +=  '<div class="product-row">'+
+                        switch (r.productType)
+                        {
+                            case 'flower':
+                                icon = 'joint';
+                                break;
+                            case 'vape':
+                                icon = 'smoking';
+                                break;
+                            case 'oil':
+                                icon = 'eye-dropper';
+                                break;
+                            case 'edible':
+                                icon = 'cookie';
+                                break;
+                            default:
+                                icon = 'cannabis';
+                                break;
+                        }
+                        content +=  '<div id="' + r.productID + '" class="product-row" onclick="prepProductDisplay(this.id);">'+
                                         '<div class="product-col left">'+
                                             '<div style="flex-direction: column;">'+
                                                 '<div class="product-name">' + r.productName+ '</div>'+
@@ -122,7 +181,7 @@ app.get('/products', (req,res) => {
                                             '</div>'+
                                         '</div>'+
                                         '<div class="product-col center">'+
-                                            '<div class="product-type">' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
+                                            '<div class="product-type"><i class="fas fa-' + icon + '"></i> ' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
                                         '</div>'+
                                         '<div class="product-col right">'+
                                             '<div class="product-qty">Stock: ' + r.quantity + '</div>'+
@@ -140,6 +199,42 @@ app.get('/products', (req,res) => {
             } );
 
     conn.end();
+});
+
+app.post('/products/info', (req,res) => {
+    let data = JSON.parse(req.headers.data);
+    let conn = newProductsConn();
+    conn.connect();
+
+    conn.query(`SELECT * FROM Products WHERE productID = "` + data.productID + `";`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"err": true});
+                } else {
+                    res.json({"err": false, "prod": rows[0]});
+                }
+            } );
+
+    conn.end();
+});
+app.post('/products/update', (req,res) => {
+    let cam = JSON.parse(req.headers.data);
+
+    res.json(cam);
+    /* let conn = newProductsConn();
+    conn.connect();
+    conn.query(`UPDATE Products SET ` + ` WHERE productID = ` + `;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"msg": "" + " was NOT successfully added to the database. Please retry."});
+                } else {
+                    res.json({"msg": "" + " was successfully added to the database."});
+                }
+            } );
+
+    conn.end(); */
 });
 
 //Hosted on port 2000

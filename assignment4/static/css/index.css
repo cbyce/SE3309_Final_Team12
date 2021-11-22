@@ -7,6 +7,8 @@
     --med-green: rgb(75,145,75);
     --dark-green: rgb(55, 125, 55);
 
+    /*-- colors with t prefix are same but transparent --*/
+    --t-v-light-green: rgb(150, 235, 150, 40%);
     /*--- c colors are followed by what they contrast---*/
     --c-dark-blue: rgb(255,250,240); /* Very light orange */
     --c-med-green: rgb(255, 245, 255); /* Very light pink */
@@ -34,7 +36,7 @@ body{
     width: 100%;
 
     display: flex;
-
+    flex-direction: column;
     padding: 1rem;
     margin-bottom: 50px; /* Accounts for footer */
 }
@@ -68,6 +70,7 @@ body{
 
     position:sticky;
     top: 0;
+    z-index: 9999;
 
     background-color: var(--med-green);
     color: var(--c-med-green);
@@ -111,6 +114,7 @@ body{
     padding: 0 1.5rem;
 
     width:100%;
+    z-index: 9999;
 
     background-color: var(--med-green);
     color: var(--c-med-green);
@@ -123,7 +127,7 @@ body{
 
 /*---------- Products Page----------*/
 .product-container{
-    margin: 15px;
+    padding: 15px;
     width:100%;
 }
 .product-row{
@@ -136,6 +140,11 @@ body{
     padding: 5px 15px;
     margin-bottom: 10px;
     width: 100%;
+    box-shadow: 2px 3px rgb(0, 0, 0, 25%);
+    cursor: pointer;
+}
+.product-row:hover{
+    background-color: var(--t-v-light-green);
 }
 .product-col{
     width: 33.333333%;
