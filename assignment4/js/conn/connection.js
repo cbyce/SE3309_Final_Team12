@@ -1,6 +1,6 @@
 const mysql = require('mysql');
 
-function newProductsConn()
+function newConn()
 {
     let conn = mysql.createConnection({
         host:'localhost',
@@ -10,4 +10,4 @@ function newProductsConn()
     });
     return conn;
 }
-module.exports = newProductsConn;
+module.exports = newConn;

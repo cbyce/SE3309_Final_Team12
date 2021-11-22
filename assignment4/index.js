@@ -1,5 +1,5 @@
 const express = require('express');
-const newProductsConn = require('./js/conn/products.js');
+const newConn = require('./js/conn/connection.js');
 //INCORPERATE PROMISES ?
 const app = express();
 
@@ -135,6 +135,7 @@ app.get('/products', (req,res) => {
                                 '<input type="number" id="soldBox" min="0" style="width:100%">'+
                             '</div>'+
                             '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
+                                '<div><input  id="prodValid" type="checkbox"></div>'+
                                 '<button id="prodDelBtn" type="button" class="btn btn-danger" style="width: 85px" onclick="deleteProduct();">Delete</button>'+
                                 '<button id="prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct();">Update</button>'+
                                 '<button id="prodAddBtn" type="button" class="btn btn-success" style="width: 85px" onclick="insertProduct();">Add</button>'+
@@ -143,7 +144,7 @@ app.get('/products', (req,res) => {
                     '</div>';
 
     let base = getPageBase("Products");
-    let conn = newProductsConn();
+    let conn = newConn();
     conn.connect();
     conn.query(`SELECT * FROM Products ORDER BY productName ASC`
             ,(err,rows,fields) => {
@@ -204,7 +205,7 @@ app.get('/products', (req,res) => {
 
 app.post('/products/info', (req,res) => {
     let data = JSON.parse(req.headers.data);
-    let conn = newProductsConn();
+    let conn = newConn();
     conn.connect();
 
     conn.query(`SELECT * FROM Products WHERE productID = "` + data.productID + `";`
@@ -222,7 +223,7 @@ app.post('/products/info', (req,res) => {
 app.post('/products/update', (req,res) => {
     let data = JSON.parse(req.headers.data);
 
-    let conn = newProductsConn();
+    let conn = newConn();
     conn.connect();
     
     conn.query(`UPDATE Products SET productName="` + data.name + `", productType="` + data.type + `", quantity=` + data.qty + `, quantitySold=` + data.sold + ` WHERE productID = "` + data.id + `";`
@@ -240,7 +241,7 @@ app.post('/products/update', (req,res) => {
 app.post('/products/delete', (req,res) => {
     let data = JSON.parse(req.headers.data);
 
-    let conn = newProductsConn();
+    let conn = newConn();
     conn.connect();
     
     conn.query(`DELETE FROM Products WHERE productID = "` + data.id + `";`
@@ -258,7 +259,7 @@ app.post('/products/delete', (req,res) => {
 app.post('/products/insert', (req,res) => {
     let data = JSON.parse(req.headers.data);
 
-    let conn = newProductsConn();
+    let conn = newConn();
     conn.connect();
     
     conn.query(`INSERT INTO Products VALUES ( "` + data.id + `", "` + data.name + `", "` + data.type + `", ` + data.qty + `, ` + data.sold + `);`

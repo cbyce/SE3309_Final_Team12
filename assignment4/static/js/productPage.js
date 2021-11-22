@@ -2,10 +2,10 @@
 
 function updateProduct()
 {
-    if ($("#idBox").val() != "") {
+    if ($("#idBox").val() != "" && $('#prodValid').prop("checked")) {
         let data = {
             "id":   $("#idBox").val(),
-            "name": $("#nameBox").val(),
+            "name": ($("#nameBox").val()).charAt(0).toUpperCase() + ($("#nameBox").val()).slice(1),
             "type": $("#typeBox :selected").val(),
             "qty":  parseInt($('#qtyBox').val()),
             "sold": parseInt($('#soldBox').val())
@@ -19,13 +19,12 @@ function updateProduct()
         xReq.send(); 
     } else {
         $('#prodUptBtn').blur();
-        //Alert for must select
     }
 }
 
 function deleteProduct()
 {
-    if ($("#idBox").val() != "") {
+    if ($("#idBox").val() != "" && $('#prodValid').prop("checked")) {
         let xReq = new XMLHttpRequest();
         xReq.onreadystatechange = displayFeedback;
 
@@ -33,13 +32,14 @@ function deleteProduct()
         xReq.setRequestHeader('data', '{"id": "' + $("#idBox").val() + '"}');
         xReq.send();
     } else {
-        //Handle error
+        $('#prodDelBtn').blur();
     }
 }
 
 function insertProduct()
 {
-    if ($("#nameBox").val() != "" && $("#nameBox").val() != " ") {
+    
+    if ($("#nameBox").val() != "" && $("#nameBox").val() != " " && $('#prodValid').prop("checked")) {
         let data = {
             "id":   getRandID(),
             "name": ($("#nameBox").val()).charAt(0).toUpperCase() + ($("#nameBox").val()).slice(1),
@@ -66,7 +66,7 @@ function insertProduct()
         xReq.setRequestHeader('data', JSON.stringify(data));
         xReq.send();
     } else {
-        //Handle error
+        $('#prodAddBtn').blur();
     }
 }
 
@@ -74,8 +74,8 @@ function displayFeedback()
 {
     if (this.readyState == 4 && this.status == 200)
     {
+        $('#prodValid').prop("checked", false); //Unchecks the validation box
         let msg = JSON.parse(this.responseText);
-        //console.log(JSON.parse(this.responseText));
         alert(msg.msg);
     }
 }
