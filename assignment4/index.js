@@ -287,28 +287,28 @@ app.get('/employees', (req,res) => {
 
     let contentPt2 = '';
     let contentPt1 =   '<script src="./js/employeePage.js"></script>'+
-                    '<div class="container" style="padding: 0.5em">'+
-                        '<div class="row">'+
-                            '<div class="col-4" style="text-align:left">'+
-                                'Showing '+
-                                '<select id="resutCountBox" style="padding: 5px;" onchange="getEmpList(this.id)">'+
-                                    '<option value="5">5</option>'+
-                                    '<option value="10" selected>10</option>'+
-                                    '<option value="15">15</option>'+
-                                    '<option value="25">25</option>'+
-                                    '<option value="50">50</option>'+
-                                '</select>'+
-                                ' per page'+
-                            '</div>'+
-                            '<div class="col-4" style="text-align:center">'+
-                                'Sort by '+
-                                '<select id="sortBox" style="padding: 5px" onchange="getEmpList(this.id)">'+
-                                    '<option value="eLName, eFName " selected>Name</option>'+
-                                    '<option value="hourlyPay, eLName">Pay</option>'+
-                                    '<option value="noOfSales, eLName">Sales</option>'+
-                                    '<option value="revenueGenerated, eLName">Revenue</option>'+
-                                '</select>'+
-                            '</div>';
+                        '<div class="container" style="padding: 0.5em">'+
+                            '<div class="row">'+
+                                '<div class="col-4" style="text-align:left">'+
+                                    'Showing '+
+                                    '<select id="resultCountBox" style="padding: 5px;" onchange="getEmpList(this.id)">'+
+                                        '<option value="5">5</option>'+
+                                        '<option value="10" selected>10</option>'+
+                                        '<option value="15">15</option>'+
+                                        '<option value="25">25</option>'+
+                                        '<option value="50">50</option>'+
+                                    '</select>'+
+                                    ' per page'+
+                                '</div>'+
+                                '<div class="col-4" style="text-align:center">'+
+                                    'Sort by '+
+                                    '<select id="sortBox" style="padding: 5px" onchange="getEmpList(this.id)">'+
+                                        '<option value="eLName, eFName " selected>Name</option>'+
+                                        '<option value="hourlyPay, eLName">Pay</option>'+
+                                        '<option value="noOfSales, eLName">Sales</option>'+
+                                        '<option value="revenueGenerated, eLName">Revenue</option>'+
+                                    '</select>'+
+                                '</div>';
 
     conn.query(`SELECT COUNT(*) FROM Employees;`
         ,(err,rows,fields) => {
@@ -383,7 +383,7 @@ app.post('/employees/page', (req,res) => {
                 }
             });
 
-    conn.query(`SELECT * FROM Employees ORDER BY ` + data.sort + ` ASC LIMIT ` + data.page * data.count + `, ` + data.count + `;`//eLName, eFName ASC LIMIT 0,10;`
+    conn.query(`SELECT * FROM Employees ORDER BY ` + data.sort + ` ASC  LIMIT ` + data.page * data.count + `, ` + data.count + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
