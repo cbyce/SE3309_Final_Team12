@@ -278,6 +278,7 @@ app.post('/products/insert', (req,res) => {
     conn.end(); 
 });
 
+/*-----_____----- Employees -----_____-----*/
 app.get('/employees', (req,res) => {
     let pageCount = 1;
     let empPerPg = 10; //EMployees shown per page
@@ -410,6 +411,152 @@ app.post('/employees/page', (req,res) => {
                                             '</div>'+
                                         '</div>'+
                                     '</div>';
+                    }                    
+                    
+                    res.json({"html":content, "numPages": pageCount});
+                }
+            } );
+
+    conn.end();
+});
+
+/*-----_____----- Customers -----_____-----*/
+app.get('/customers', (req,res) => {
+    let pageCount = 1;
+    let custPerPg = 10; //Customers shown per page
+    let base = getPageBase("Customers");
+    let conn = newConn();
+    conn.connect();
+
+    let contentPt2 = '';
+    let contentPt1 =   '<script src="./js/customerPage.js"></script>'+
+                        '<div class="container" style="padding: 0.5em">'+
+                            '<div class="row">'+
+                                '<div class="col-4" style="text-align:left">'+
+                                    'Showing '+
+                                    '<select id="resultCountBox" style="padding: 5px;" onchange="getCustList(this.id)">'+
+                                        '<option value="5">5</option>'+
+                                        '<option value="10" selected>10</option>'+
+                                        '<option value="15">15</option>'+
+                                        '<option value="25">25</option>'+
+                                        '<option value="50">50</option>'+
+                                        '<option value="75">75</option>'+
+                                        '<option value="100">100</option>'+
+                                    '</select>'+
+                                    ' per page'+
+                                '</div>'+
+                                '<div class="col-4" style="text-align:center">'+
+                                    'Sort by '+
+                                    '<select id="sortBox" style="padding: 5px" onchange="getCustList(this.id)">'+
+                                        '<option value="cLName, cFName " selected>Name</option>'+
+                                        '<option value="email, cLName">Email</option>'+
+                                        '<option value="numVisits, cLName">Visits</option>'+
+                                        '<option value="totSpent, cLName">Spent</option>'+
+                                    '</select>'+
+                                '</div>';
+
+    conn.query(`SELECT COUNT(*) FROM Customers;`
+        ,(err,rows,fields) => {
+            if (err) {
+                console.log(err);
+            } else {
+                pageCount = Math.ceil(rows[0]['COUNT(*)'] / custPerPg);
+
+                contentPt1 +=  '<div class="col-4" style="text-align:right">'+
+                                'Page '+
+                                '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getCustList(this.id)">'+
+                                ' of <span id="pgCountSpan">' + pageCount + '</span>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
+            }
+        });
+
+    conn.query(`SELECT * FROM Customers ORDER BY cLName, cFName ASC LIMIT 0,` + custPerPg + `;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.send(getErrPage());
+                } else {
+                    contentPt2 += '<div id="custContainer" class="product-container">';
+
+                    for(r of rows)
+                    {
+                        contentPt2 +=  '<div id="' + r.cID + '" class="product-row" onclick="console.log(this.id);">'+
+                                            '<div class="product-col left">'+
+                                                '<div style="flex-direction: column;">'+
+                                                    '<div class="product-name">' + r.cLName + ', ' + r.cFName + '</div>'+
+                                                    '<div class="product-id">' + r.cID + '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="product-col center">'+
+                                                '<div class="product-type">' + r.email + '</div>'+
+                                            '</div>'+
+                                            '<div class="product-col right">'+
+                                                '<div style="flex-direction: column; width: 175px">'+
+                                                    '<div style="display:flex; justify-content:space-between"><div>Visits: </div><div> ' + r.numVisits + '</div></div>'+
+                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Spent: </div><div>' + currency.format(r.totSpent) + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                        '</div>';
+                    }
+
+                    contentPt2 += '</div>';
+                    
+                    
+                    
+                    
+                    res.send(base.head + contentPt1 + contentPt2 + base.foot);
+                }
+            } );
+
+    conn.end();
+});
+app.post('/customer/page', (req,res) => {
+    let pageCount;
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT COUNT(*) FROM Customers;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
+                }
+            });
+
+    conn.query(`SELECT * FROM Customers ORDER BY ` + data.sort + ` ASC  LIMIT ` + data.page * data.count + `, ` + data.count + `;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.send(getErrPage());
+                } else {
+                    let content = '';
+
+                    for(r of rows)
+                    {
+                        content +=  '<div id="' + r.cID + '" class="product-row" onclick="console.log(this.id);">'+
+                                            '<div class="product-col left">'+
+                                                '<div style="flex-direction: column;">'+
+                                                    '<div class="product-name">' + r.cLName + ', ' + r.cFName + '</div>'+
+                                                    '<div class="product-id">' + r.cID + '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="product-col center">'+
+                                                '<div class="product-type">' + r.email + '</div>'+
+                                            '</div>'+
+                                            '<div class="product-col right">'+
+                                                '<div style="flex-direction: column; width: 175px">'+
+                                                    '<div style="display:flex; justify-content:space-between"><div>Visits: </div><div> ' + r.numVisits + '</div></div>'+
+                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Spent: </div><div>' + currency.format(r.totSpent) + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                        '</div>';
                     }                    
                     
                     res.json({"html":content, "numPages": pageCount});
