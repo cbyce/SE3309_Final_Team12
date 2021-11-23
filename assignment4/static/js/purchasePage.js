@@ -14,12 +14,12 @@ function getPurchList(id)
         "count": parseInt($("#resultCountBox :selected").val())
     };
 
-    /* let xReq = new XMLHttpRequest();
-    xReq.onreadystatechange = displayEmployeeList;
+    let xReq = new XMLHttpRequest();
+    xReq.onreadystatechange = displayPurchList;
 
     xReq.open('POST','/purchases/page',true);
     xReq.setRequestHeader('data', JSON.stringify(data));
-    xReq.send();  */
+    xReq.send();  
 }
 
 function displayPurchList()
@@ -44,7 +44,7 @@ function getPurchRcpt(id)
         let xReq = new XMLHttpRequest();
         xReq.onreadystatechange = displayReciept;
 
-        xReq.open('POST','/purchases/reciepts',true);
+        xReq.open('POST','/purchases/receipts',true);
         xReq.setRequestHeader('data', JSON.stringify(data));
         xReq.send();  
     } else {

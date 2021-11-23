@@ -50,7 +50,7 @@ function getPageBase(pageTitle) {
                                     
                                     '<div class="line-seperator"></div>'+
                         
-                                    '<a id="customers-btn" class="btn-round nav-btn" href="/customers"><i class="fas fa-receipt"></i></a>'+
+                                    '<a id="customers-btn" class="btn-round nav-btn" href="/customers"><i class="fas fa-users"></i></a>'+
                             
                                     '<div class="line-seperator"></div>'+
                                     
@@ -70,7 +70,7 @@ function getPageBase(pageTitle) {
 
                                     '<div class="line-seperator"></div>'+
     
-                                    '<a id="shipment-btn" class="btn-round nav-btn" href="/purchases"><i class="fas fa-ship"></i></a>'+
+                                    '<a id="shipment-btn" class="btn-round nav-btn" href="/purchases"><i class="fas fa-receipt"></i></a>'+
                                 '</div>'+
                             '</div>'+
                             '<div class="default-page">',
@@ -656,9 +656,10 @@ app.post('/customer/page', (req,res) => {
     conn.end();
 });
 
+/*-----_____-----  Purchases -----_____-----*/
 app.get('/purchases', (req, res) => {
     let pageCount = 1;
-    let purchPerPg = 10; //Customers shown per page
+    let purchPerPg = 10; //Purchases shown per page
     let base = getPageBase("Purchases");
     let conn = newConn();
     conn.connect();
@@ -682,11 +683,11 @@ app.get('/purchases', (req, res) => {
                                 '</div>'+
                                 '<div class="col-4" style="text-align:center">'+
                                     'Sort by '+
-                                    '<select id="sortBox" style="padding: 5px" onchange="console.log(this.id)">'+
-                                        '<option value="cLName, cFName " selected>Name</option>'+
-                                        '<option value="email, cLName">Email</option>'+
-                                        '<option value="numVisits, cLName">Visits</option>'+
-                                        '<option value="totSpent, cLName">Spent</option>'+
+                                    '<select id="sortBox" style="padding: 5px" onchange="getPurchList(this.id)">'+
+                                        '<option value="Purchase.orderFillDate DESC, Customers.cLName ASC, Employees.eLName  ASC" selected>Date</option>'+
+                                        '<option value="Customers.cLName ASC, Customers.cFName, Purchase.orderFillDate DESC, Employees.eLName  ASC">Customer</option>'+
+                                        '<option value="Employees.eLName ASC, Employees.eFName, Purchase.orderFillDate DESC, Customers.cLName  ASC">Employee</option>'+
+                                        '<option value="orderTotal DESC, Purchase.orderFillDate DESC, Customers.cLName ASC, Employees.eLName ASC">Total Spent</option>'+
                                     '</select>'+
                                 '</div>';
 
@@ -699,7 +700,7 @@ app.get('/purchases', (req, res) => {
 
                 contentPt1 +=  '<div class="col-4" style="text-align:right">'+
                                 'Page '+
-                                '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getCustList(this.id)">'+
+                                '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getPurchList(this.id)">'+
                                 ' of <span id="pgCountSpan">' + pageCount + '</span>'+
                             '</div>'+
                         '</div>'+
@@ -707,56 +708,58 @@ app.get('/purchases', (req, res) => {
             }
         });
 
-    conn.query(`SELECT Purchase.*, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName 
+    conn.query(`SELECT Purchase.*, SUM(ProductPurchase.totCost) orderTotal, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName, Customers.email 
                 FROM Purchase 
+                INNER JOIN ProductPurchase ON Purchase.orderID = ProductPurchase.orderID 
                 INNER JOIN Employees ON Purchase.eID = Employees.eID 
                 INNER JOIN Customers ON Purchase.cID = Customers.cID 
-                ORDER BY Purchase.orderFillDate, Customers.cLName, Employees.eLName ASC LIMIT 0,` + purchPerPg + `;`
-            ,(err,rows,fields) => {
-                if (err) {
-                    console.log(err);
-                    res.send(getErrPage());
-                } else {
-                    contentPt2 += '<div id="purchContainer" class="product-container">';
+                GROUP BY orderID
+                ORDER BY Purchase.orderFillDate DESC, orderTotal DESC, Customers.cLName ASC, Employees.eLName  ASC LIMIT 0,` + purchPerPg + `;`
+                ,(err,rows,fields) => {
+                    if (err) {
+                        console.log(err);
+                        res.send(getErrPage());
+                    } else {
+                        contentPt2 += '<div id="purchContainer" class="product-container">';
 
-                    for(r of rows)
-                    {
-                        contentPt2 +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
-                                            '<div class="product-col left">'+
-                                                '<div style="flex-direction: column;">'+
-                                                    '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + '</div>'+
-                                                    '<div class="product-id">' + r.orderID + '</div>'+
+                        for(r of rows)
+                        {
+                            contentPt2 +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
+                                                '<div class="product-col left">'+
+                                                    '<div style="flex-direction: column;">'+
+                                                        '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + '</div>'+
+                                                        '<div class="product-id">' + r.orderID + '</div>'+
+                                                    '</div>'+
                                                 '</div>'+
-                                            '</div>'+
-                                            '<div class="product-col center">'+
-                                                //'<div class="product-type">' + r.email + '</div>'+
-                                            '</div>'+
-                                            '<div class="product-col right">'+
-                                                '<div style="flex-direction: column; width: 350px">'+
-                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Customer:</div><div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div></div>'+
-                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Employee:</div><div class="product-name">' + r.eFName + ' ' + r.eLName + '</div>'+
+                                                '<div class="product-col center" style="flex-direction:column">'+
+                                                    '<div class="product-type">' + r.email + '</div>'+
+                                                    '<div class="product-type" style="font-weight:bold">' + currency.format(parseInt(r.orderTotal)) + '</div>'+
+                                                '</div>'+
+                                                '<div class="product-col right">'+
+                                                    '<div style="flex-direction: column; width: 350px">'+
+                                                        '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Customer:</div><div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div></div>'+
+                                                        '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Employee:</div><div class="product-name">' + r.eFName + ' ' + r.eLName + '</div></div>'+
                                                     '</div>'+
                                                 '</div>'+
                                             '</div>'+
-                                        '</div>'+
-                                        '<div class="collapse" id="' + r.orderID + 'Collapse">'+
-                                            '<div class="card card-body" id="' + r.orderID +'Card">'+
-                                                'N/A'+
-                                            '</div>'+
-                                        '</div>';
-                    }
+                                            '<div class="collapse" id="' + r.orderID + 'Collapse">'+
+                                                '<div class="card card-body" id="' + r.orderID +'Card">'+
+                                                    'N/A'+
+                                                '</div>'+
+                                            '</div>';
+                        }
 
-                    contentPt2 += '</div>';
-                    
-                    
-                    
-                    
-                    res.send(base.head + contentPt1 + contentPt2 + base.foot);
-                    conn.end();
-                }
+                        contentPt2 += '</div>';
+                        
+                        
+                        
+                        
+                        res.send(base.head + contentPt1 + contentPt2 + base.foot);
+                        conn.end();
+                    }
             } );
 });
-app.post('/purchases/reciepts', (req,res) => {
+app.post('/purchases/receipts', (req,res) => {
     let pageCount;
     let data = JSON.parse(req.headers.data);
 
@@ -811,6 +814,70 @@ app.post('/purchases/reciepts', (req,res) => {
                         res.json({"id": data.order, "html":content});
                     }
             });
+
+    conn.end();
+});
+app.post('/purchases/page', (req,res) => {
+    let pageCount;
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT COUNT(*) FROM Purchase;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
+                }
+            });
+            
+
+    conn.query(`SELECT Purchase.*, SUM(ProductPurchase.totCost) orderTotal, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName, Customers.email 
+                FROM Purchase 
+                INNER JOIN ProductPurchase ON Purchase.orderID = ProductPurchase.orderID 
+                INNER JOIN Employees ON Purchase.eID = Employees.eID 
+                INNER JOIN Customers ON Purchase.cID = Customers.cID 
+                GROUP BY orderID
+                ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `, ` + data.count + `;` //ORDER BY ` + data.sort+ ` ect
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.send(getErrPage());
+                } else {
+                    let content = '';
+
+                    for(r of rows)
+                    {
+                        content +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
+                                            '<div class="product-col left">'+
+                                                '<div style="flex-direction: column;">'+
+                                                    '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + '</div>'+
+                                                    '<div class="product-id">' + r.orderID + '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="product-col center" style="flex-direction:column">'+
+                                                '<div class="product-type">' + r.email + '</div>'+
+                                                '<div class="product-type" style="font-weight:bold">' + currency.format(parseInt(r.orderTotal)) + '</div>'+
+                                            '</div>'+
+                                            '<div class="product-col right">'+
+                                                '<div style="flex-direction: column; width: 350px">'+
+                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Customer:</div><div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div></div>'+
+                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Employee:</div><div class="product-name">' + r.eFName + ' ' + r.eLName + '</div></div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                        '</div>'+
+                                        '<div class="collapse" id="' + r.orderID + 'Collapse">'+
+                                            '<div class="card card-body" id="' + r.orderID +'Card">'+
+                                                'N/A'+
+                                            '</div>'+
+                                        '</div>';
+                    }
+                    
+                    res.json({"html":content, "numPages": pageCount});
+                }
+            } );
 
     conn.end();
 });
