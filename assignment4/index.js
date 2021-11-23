@@ -50,23 +50,27 @@ function getPageBase(pageTitle) {
                                     
                                     '<div class="line-seperator"></div>'+
                         
-                                    '<a id="customers-btn" class="btn-round nav-btn"><i class="fas fa-receipt"></i></a>'+
+                                    '<a id="customers-btn" class="btn-round nav-btn" href="/customers"><i class="fas fa-receipt"></i></a>'+
                             
                                     '<div class="line-seperator"></div>'+
                                     
-                                    '<a id="employee-btn" class="btn-round nav-btn"><i class="fas fa-id-badge"></i></a>'+
+                                    '<a id="employee-btn" class="btn-round nav-btn" href="/employees"><i class="fas fa-id-badge"></i></a>'+
                                     
                                     '<div class="line-seperator"></div>'+
                                     
-                                    '<a id="reservation-btn" class="btn-round nav-btn"><i class="fas fa-calendar"></i></a>'+
+                                    '<a id="reservation-btn" class="btn-round nav-btn" href="/reservations"><i class="fas fa-calendar"></i></a>'+
                             
                                     '<div class="line-seperator"></div>'+
                         
-                                    '<a id="ads-btn" class="btn-round nav-btn"><i class="fas fa-mail-bulk"></i></a>'+
+                                    '<a id="ads-btn" class="btn-round nav-btn" href="/advertisements"><i class="fas fa-mail-bulk"></i></a>'+
                             
                                     '<div class="line-seperator"></div>'+
                             
-                                    '<a id="shipment-btn" class="btn-round nav-btn"><i class="fas fa-ship"></i></a>'+
+                                    '<a id="shipment-btn" class="btn-round nav-btn" href="/shipments"><i class="fas fa-ship"></i></a>'+
+
+                                    '<div class="line-seperator"></div>'+
+    
+                                    '<a id="shipment-btn" class="btn-round nav-btn" href="/purchases"><i class="fas fa-ship"></i></a>'+
                                 '</div>'+
                             '</div>'+
                             '<div class="default-page">',
@@ -95,7 +99,7 @@ function getPageBase(pageTitle) {
 
 //Change to incorperate error code display
 function getErrPage() {
-    let base = getpageBase('Error'); 
+    let base = getPageBase('Error'); 
 
     return (base.head + 'An Error Has Occured, Please try again later.' + base.foot);
 }
@@ -107,78 +111,73 @@ var currency = new Intl.NumberFormat('en-US', {
 
 /*-----_____----- Products -----_____-----*/
 app.get('/products', (req,res) => {
-    let content =   '<script src="./js/productPage.js"></script>'+
-                    '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">'+
-                        '<div class="row" style="padding: 0.5em">'+
-                            '<div class="col-4">'+
-                                '<label for="idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
-                                '<input type="text" id="idBox" value="" style="width:100%; cursor: not-allowed" readonly>'+
-                            '</div>'+
-                            '<div class="col-4">'+
-                                '<label for="nameBox">Name:</label><br>'+
-                                '<input type="text" id="nameBox" value="" style="width:100%">'+
-                            '</div>'+
-                            '<div class="col-4">'+
-                                '<label for="typeBox">Type:</label><br>'+
-                                '<select id="typeBox" style="width: 100%; height: 30px;">'+
-                                    '<option value="flower">Flower</option>'+
-                                    '<option value="vape">Vape</option>'+
-                                    '<option value="edible">Edible</option>'+
-                                    '<option value="oil">Oil</option>'+
-                                    '<option value="other">Other</option>'+
-                                '</select>'+
-                            '</div>'+
-                        '</div>'+
-                        '<div class="row" style="padding: 0.5em">'+
-                            '<div class="col-4">'+
-                                '<label for="qtyBox">Quantity:</label><br>'+
-                                '<input type="number" id="qtyBox" min="0" style="width:100%">'+
-                            '</div>'+
-                            '<div class="col-4">'+
-                                '<label for="soldBox">Quantity Sold:</label><br>'+
-                                '<input type="number" id="soldBox" min="0" style="width:100%">'+
-                            '</div>'+
-                            '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
-                                '<div><input  id="prodValid" type="checkbox"></div>'+
-                                '<button id="prodDelBtn" type="button" class="btn btn-danger" style="width: 85px" onclick="deleteProduct();">Delete</button>'+
-                                '<button id="prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct();">Update</button>'+
-                                '<button id="prodAddBtn" type="button" class="btn btn-success" style="width: 85px" onclick="insertProduct();">Add</button>'+
-                            '</div>'+
-                        '</div>'+
-                    '</div>';
-
+    let pageCount = 1;
+    let prodPerPg = 10; //Products shown per page
     let base = getPageBase("Products");
     let conn = newConn();
     conn.connect();
-    conn.query(`SELECT * FROM Products ORDER BY productName ASC`
+    let content =   '<script src="./js/productPage.js"></script>';
+
+    content +=  '<div class="container" style="padding: 0.5em">'+
+                    '<div class="row">'+
+                        '<div class="col-4" style="text-align:left">'+
+                            'Showing '+
+                            '<select id="resultCountBox" style="padding: 5px;" onchange="getProdList(this.id)">'+
+                                '<option value="5">5</option>'+
+                                '<option value="10" selected>10</option>'+
+                                '<option value="15">15</option>'+
+                                '<option value="25">25</option>'+
+                                '<option value="50">50</option>'+
+                                '<option value="75">75</option>'+
+                                '<option value="100">100</option>'+
+                            '</select>'+
+                            ' per page'+
+                        '</div>'+
+                        '<div class="col-4" style="text-align:center">'+
+                            'Sort '+
+                            '<select id="prodTypeBox" style="padding: 5px" onchange="getProdList(this.id)">'+
+                                '<option value="" selected>All</option>'+
+                                '<option value="flower">Flower</option>'+
+                                '<option value="vape">Vape</option>'+
+                                '<option value="edible">Edible</option>'+
+                                '<option value="oil">Oil</option>'+
+                                '<option value="other">Other</option>'+
+                            '</select>'+
+                            ' by '+
+                            '<select id="sortBox" style="padding: 5px" onchange="getProdList(this.id)">'+
+                                '<option value="productName" selected>Name</option>'+
+                                '<option value="quantity, productName">Quantity</option>'+
+                                '<option value="quantitySold, productName">Quantity Sold</option>'+
+                            '</select>'+
+                        '</div>';
+    
+    conn.query(`SELECT COUNT(*) FROM Products;`
+        ,(err,rows,fields) => {
+            if (err) {
+                console.log(err);
+            } else {
+                pageCount = Math.ceil(rows[0]['COUNT(*)'] / prodPerPg);
+
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Page '+
+                                '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getProdList(this.id)">'+
+                                ' of <span id="pgCountSpan">' + pageCount + '</span>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
+            }
+        });
+    
+    conn.query(`SELECT * FROM Products ORDER BY productName ASC LIMIT 0,` + prodPerPg + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
                     res.send(getErrPage());
                 } else {
-                    content += '<div class="product-container">';
-                    let icon;
+                    content += '<div class="product-container" id="prodContainer">';
 
                     for(r of rows)
                     {
-                        switch (r.productType)
-                        {
-                            case 'flower':
-                                icon = 'joint';
-                                break;
-                            case 'vape':
-                                icon = 'smoking';
-                                break;
-                            case 'oil':
-                                icon = 'eye-dropper';
-                                break;
-                            case 'edible':
-                                icon = 'cookie';
-                                break;
-                            default:
-                                icon = 'cannabis';
-                                break;
-                        }
                         content +=  '<div id="' + r.productID + '" class="product-row" onclick="prepProductDisplay(this.id);">'+
                                         '<div class="product-col left">'+
                                             '<div style="flex-direction: column;">'+
@@ -187,20 +186,111 @@ app.get('/products', (req,res) => {
                                             '</div>'+
                                         '</div>'+
                                         '<div class="product-col center">'+
-                                            '<div class="product-type"><i class="fas fa-' + icon + '"></i> ' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
+                                            '<div class="product-type">' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
                                         '</div>'+
                                         '<div class="product-col right">'+
-                                            '<div class="product-qty">Stock: ' + r.quantity + '</div>'+
+                                            '<div style="flex-direction: column; width: 175px">'+
+                                                '<div style="display:flex; justify-content:space-between"><div>Qty: </div><div> ' + r.quantity + '</div></div>'+
+                                                '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Qty Sold: </div><div>' + r.quantitySold + '</div></div>'+
+                                            '</div>'+
                                         '</div>'+
                                     '</div>';
                     }
 
                     content += '</div>';
-                    
-                    
-                    
+
+                    //Changes box
+                    content += '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">'+
+                                    '<div class="row" style="padding: 0.5em">'+
+                                        '<div class="col-4">'+
+                                            '<label for="idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
+                                            '<input type="text" id="idBox" value="" style="width:100%; cursor: not-allowed" readonly>'+
+                                        '</div>'+
+                                        '<div class="col-4">'+
+                                            '<label for="nameBox">Name:</label><br>'+
+                                            '<input type="text" id="nameBox" value="" style="width:100%">'+
+                                        '</div>'+
+                                        '<div class="col-4">'+
+                                            '<label for="typeBox">Type:</label><br>'+
+                                            '<select id="typeBox" style="width: 100%; height: 30px;">'+
+                                                '<option value="flower">Flower</option>'+
+                                                '<option value="vape">Vape</option>'+
+                                                '<option value="edible">Edible</option>'+
+                                                '<option value="oil">Oil</option>'+
+                                                '<option value="other">Other</option>'+
+                                            '</select>'+
+                                        '</div>'+
+                                    '</div>'+
+                                    '<div class="row" style="padding: 0.5em">'+
+                                        '<div class="col-4">'+
+                                            '<label for="qtyBox">Quantity:</label><br>'+
+                                            '<input type="number" id="qtyBox" min="0" style="width:100%">'+
+                                        '</div>'+
+                                        '<div class="col-4">'+
+                                            '<label for="soldBox">Quantity Sold:</label><br>'+
+                                            '<input type="number" id="soldBox" min="0" style="width:100%">'+
+                                        '</div>'+
+                                        '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
+                                            '<div><input  id="prodValid" type="checkbox"></div>'+
+                                            '<button id="prodDelBtn" type="button" class="btn btn-danger" style="width: 85px" onclick="deleteProduct();">Delete</button>'+
+                                            '<button id="prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct();">Update</button>'+
+                                            '<button id="prodAddBtn" type="button" class="btn btn-success" style="width: 85px" onclick="insertProduct();">Add</button>'+
+                                        '</div>'+
+                                    '</div>'+
+                                '</div>';
                     
                     res.send(base.head + content + base.foot);
+                }
+            } );
+
+    conn.end();
+});
+app.post('/products/page', (req,res) => {
+    let pageCount;
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT COUNT(*) FROM Products ` + data.type + `;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
+                }
+            });
+
+    conn.query(`SELECT * FROM Products ` + data.type + ` ORDER BY ` + data.sort + ` ASC  LIMIT ` + data.page * data.count + `, ` + data.count + `;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.send(getErrPage());
+                } else {
+                    let content = '';
+
+                    for(r of rows)
+                    {
+                        content +=  '<div id="' + r.productID + '" class="product-row" onclick="prepProductDisplay(this.id);">'+
+                                        '<div class="product-col left">'+
+                                            '<div style="flex-direction: column;">'+
+                                                '<div class="product-name">' + r.productName+ '</div>'+
+                                                '<div class="product-id">' + r.productID + '</div>'+
+                                            '</div>'+
+                                        '</div>'+
+                                        '<div class="product-col center">'+
+                                            '<div class="product-type">' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
+                                        '</div>'+
+                                        '<div class="product-col right">'+
+                                            '<div style="flex-direction: column; width: 175px">'+
+                                                '<div style="display:flex; justify-content:space-between"><div>Qty: </div><div> ' + r.quantity + '</div></div>'+
+                                                '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Qty Sold: </div><div>' + r.quantitySold + '</div></div>'+
+                                            '</div>'+
+                                        '</div>'+
+                                    '</div>';
+                    }                    
+                    
+                    res.json({"html":content, "numPages": pageCount});
                 }
             } );
 
@@ -562,6 +652,165 @@ app.post('/customer/page', (req,res) => {
                     res.json({"html":content, "numPages": pageCount});
                 }
             } );
+
+    conn.end();
+});
+
+app.get('/purchases', (req, res) => {
+    let pageCount = 1;
+    let purchPerPg = 10; //Customers shown per page
+    let base = getPageBase("Purchases");
+    let conn = newConn();
+    conn.connect();
+
+    let contentPt2 = '';
+    let contentPt1 =   '<script src="./js/purchasePage.js"></script>'+
+                        '<div class="container" style="padding: 0.5em">'+
+                            '<div class="row">'+
+                                '<div class="col-4" style="text-align:left">'+
+                                    'Showing '+
+                                    '<select id="resultCountBox" style="padding: 5px;" onchange="getPurchList(this.id)">'+
+                                        '<option value="5">5</option>'+
+                                        '<option value="10" selected>10</option>'+
+                                        '<option value="15">15</option>'+
+                                        '<option value="25">25</option>'+
+                                        '<option value="50">50</option>'+
+                                        '<option value="75">75</option>'+
+                                        '<option value="100">100</option>'+
+                                    '</select>'+
+                                    ' per page'+
+                                '</div>'+
+                                '<div class="col-4" style="text-align:center">'+
+                                    'Sort by '+
+                                    '<select id="sortBox" style="padding: 5px" onchange="console.log(this.id)">'+
+                                        '<option value="cLName, cFName " selected>Name</option>'+
+                                        '<option value="email, cLName">Email</option>'+
+                                        '<option value="numVisits, cLName">Visits</option>'+
+                                        '<option value="totSpent, cLName">Spent</option>'+
+                                    '</select>'+
+                                '</div>';
+
+    conn.query(`SELECT COUNT(*) FROM Purchase;`
+        ,(err,rows,fields) => {
+            if (err) {
+                console.log(err);
+            } else {
+                pageCount = Math.ceil(rows[0]['COUNT(*)'] / purchPerPg);
+
+                contentPt1 +=  '<div class="col-4" style="text-align:right">'+
+                                'Page '+
+                                '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getCustList(this.id)">'+
+                                ' of <span id="pgCountSpan">' + pageCount + '</span>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
+            }
+        });
+
+    conn.query(`SELECT Purchase.*, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName 
+                FROM Purchase 
+                INNER JOIN Employees ON Purchase.eID = Employees.eID 
+                INNER JOIN Customers ON Purchase.cID = Customers.cID 
+                ORDER BY Purchase.orderFillDate, Customers.cLName, Employees.eLName ASC LIMIT 0,` + purchPerPg + `;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.send(getErrPage());
+                } else {
+                    contentPt2 += '<div id="purchContainer" class="product-container">';
+
+                    for(r of rows)
+                    {
+                        contentPt2 +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
+                                            '<div class="product-col left">'+
+                                                '<div style="flex-direction: column;">'+
+                                                    '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + '</div>'+
+                                                    '<div class="product-id">' + r.orderID + '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="product-col center">'+
+                                                //'<div class="product-type">' + r.email + '</div>'+
+                                            '</div>'+
+                                            '<div class="product-col right">'+
+                                                '<div style="flex-direction: column; width: 350px">'+
+                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Customer:</div><div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div></div>'+
+                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Employee:</div><div class="product-name">' + r.eFName + ' ' + r.eLName + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                        '</div>'+
+                                        '<div class="collapse" id="' + r.orderID + 'Collapse">'+
+                                            '<div class="card card-body" id="' + r.orderID +'Card">'+
+                                                'N/A'+
+                                            '</div>'+
+                                        '</div>';
+                    }
+
+                    contentPt2 += '</div>';
+                    
+                    
+                    
+                    
+                    res.send(base.head + contentPt1 + contentPt2 + base.foot);
+                    conn.end();
+                }
+            } );
+});
+app.post('/purchases/reciepts', (req,res) => {
+    let pageCount;
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT ProductPurchase.qty, ProductPurchase.totCost, Products.productName, Products.productType
+                FROM ProductPurchase
+                INNER JOIN Products ON ProductPurchase.productID=Products.productID
+                WHERE ProductPurchase.orderID = "` + data.order + `"
+                ORDER BY Products.productName;`
+                    ,(err,rows,fields) => {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        let content = '<div class="container"><div class="row">';
+                        let total = 0;
+
+                        for (r of rows) {
+                            total += r.totCost;
+
+                            content +=  '<div class="col-4">'+
+                                            '<div class="product-name">' + r.productName + '</div>'+
+                                        '</div>';
+
+                            content +=  '<div class="col-2">'+
+                                            '<div style="text-align:center">' + r.productType.charAt(0).toUpperCase() + r.productType.slice(1) + '</div>'+
+                                        '</div>';
+
+                            content +=  '<div class="col-1">'+
+                                            '<div class="product-id" style="text-align:right">' + r.qty + '</div>'+
+                                        '</div>';
+                            content +=  '<div class="col-1">'+
+                                            '<div class="product-id" style="text-align:center"> @ </div>'+
+                                        '</div>';
+                            content +=  '<div class="col-1">'+
+                                            '<div class="product-id" style="text-align:right">'+ currency.format(r.totCost/r.qty) + '</div>'+
+                                        '</div>';
+
+                            content +=  '<div class="col-3">'+
+                                            '<div style="text-align:right">' + currency.format(r.totCost) + '</div>'+
+                                        '</div>';
+
+
+                        }
+                        content +=  '<div class="col-12" style="text-align:right;">'+
+                                        '<div class="product-name" style="border-top: 2px solid black;">' + currency.format(total) + '</div>'+
+                                    '</div>';
+
+                        content += '</div></div>';
+
+                        res.json({"id": data.order, "html":content});
+                    }
+            });
 
     conn.end();
 });
