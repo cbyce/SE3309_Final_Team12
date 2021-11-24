@@ -61,10 +61,6 @@ function getPageBase(pageTitle) {
                                     '<a id="reservation-btn" class="btn-round nav-btn" href="/reservations"><i class="fas fa-calendar"></i></a>'+
                             
                                     '<div class="line-seperator"></div>'+
-                        
-                                    '<a id="ads-btn" class="btn-round nav-btn" href="/advertisements"><i class="fas fa-mail-bulk"></i></a>'+
-                            
-                                    '<div class="line-seperator"></div>'+
                             
                                     '<a id="shipment-btn" class="btn-round nav-btn" href="/shipments"><i class="fas fa-ship"></i></a>'+
 
@@ -145,9 +141,9 @@ app.get('/products', (req,res) => {
                             '</select>'+
                             ' by '+
                             '<select id="sortBox" style="padding: 5px" onchange="getProdList(this.id)">'+
-                                '<option value="productName" selected>Name</option>'+
-                                '<option value="quantity, productName">Quantity</option>'+
-                                '<option value="quantitySold, productName">Quantity Sold</option>'+
+                                '<option value="productName ASC, productType ASC, quantity DESC" selected>Name</option>'+
+                                '<option value="quantity DESC, productName ASC">Quantity</option>'+
+                                '<option value="quantitySold DESC, productName ASC">Quantity Sold</option>'+
                             '</select>'+
                         '</div>';
     
@@ -261,7 +257,7 @@ app.post('/products/page', (req,res) => {
                 }
             });
 
-    conn.query(`SELECT * FROM Products ` + data.type + ` ORDER BY ` + data.sort + ` ASC  LIMIT ` + data.page * data.count + `, ` + data.count + `;`
+    conn.query(`SELECT * FROM Products ` + data.type + ` ORDER BY ` + data.sort + `  LIMIT ` + data.page * data.count + `, ` + data.count + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -418,7 +414,7 @@ app.get('/employees', (req,res) => {
             }
         });
 
-    conn.query(`SELECT * FROM Employees ORDER BY eLName, eFName ASC LIMIT 0,` + empPerPg + `;`
+    conn.query(`SELECT * FROM Employees ORDER BY eLName ASC, eFName ASC LIMIT 0,` + empPerPg + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -630,7 +626,7 @@ app.post('/customer/page', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.cID + '" class="product-row" onclick="getCurrAdvert(this.id);">'+
+                        content +=  '<div id="' + r.cID + '" class="product-row" style="margin-bottom:0;margin-top:10px" onclick="getCurrAdvert(this.id);">'+
                                             '<div class="product-col left">'+
                                                 '<div style="flex-direction: column;">'+
                                                     '<div class="product-name">' + r.cLName + ', ' + r.cFName + '</div>'+
@@ -754,8 +750,7 @@ app.get('/purchases', (req, res) => {
     let conn = newConn();
     conn.connect();
 
-    let contentPt2 = '';
-    let contentPt1 =   '<script src="./js/purchasePage.js"></script>'+
+    let content =   '<script src="./js/purchasePage.js"></script>'+
                         '<div class="container" style="padding: 0.5em">'+
                             '<div class="row">'+
                                 '<div class="col-4" style="text-align:left">'+
@@ -788,7 +783,7 @@ app.get('/purchases', (req, res) => {
             } else {
                 pageCount = Math.ceil(rows[0]['COUNT(*)'] / purchPerPg);
 
-                contentPt1 +=  '<div class="col-4" style="text-align:right">'+
+                content +=  '<div class="col-4" style="text-align:right">'+
                                 'Page '+
                                 '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getPurchList(this.id)">'+
                                 ' of <span id="pgCountSpan">' + pageCount + '</span>'+
@@ -804,17 +799,17 @@ app.get('/purchases', (req, res) => {
                 INNER JOIN Employees ON Purchase.eID = Employees.eID 
                 INNER JOIN Customers ON Purchase.cID = Customers.cID 
                 GROUP BY orderID
-                ORDER BY Purchase.orderFillDate DESC, orderTotal DESC, Customers.cLName ASC, Employees.eLName  ASC LIMIT 0,` + purchPerPg + `;`
+                ORDER BY Purchase.orderFillDate DESC, orderTotal DESC, Customers.cLName ASC, Customers.cFName ASC, Employees.eLName  ASC, Employees.eFName  ASC LIMIT 0,` + purchPerPg + `;`
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
                         res.send(getErrPage());
                     } else {
-                        contentPt2 += '<div id="purchContainer" class="product-container">';
+                        content += '<div id="purchContainer" class="product-container">';
 
                         for(r of rows)
                         {
-                            contentPt2 +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
+                            content +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
                                                 '<div class="product-col left">'+
                                                     '<div style="flex-direction: column;">'+
                                                         '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + '</div>'+
@@ -839,12 +834,12 @@ app.get('/purchases', (req, res) => {
                                             '</div>';
                         }
 
-                        contentPt2 += '</div>';
+                        content += '</div>';
                         
                         
                         
                         
-                        res.send(base.head + contentPt1 + contentPt2 + base.foot);
+                        res.send(base.head  + content + base.foot);
                         conn.end();
                     }
             } );
@@ -972,6 +967,164 @@ app.post('/purchases/page', (req,res) => {
     conn.end();
 });
 
+app.get('/reservations', (req, res) => {
+    let pageCount = 1;
+    let resPerPg = 10; //Purchases shown per page
+    let base = getPageBase("Reservations");
+    let conn = newConn();
+    conn.connect();
+
+    let content =   '<script src="./js/reservationPage.js"></script>'+
+                        '<div class="container" style="padding: 0.5em">'+
+                            '<div class="row">'+
+                                '<div class="col-4" style="text-align:left">'+
+                                    'Showing '+
+                                    '<select id="resultCountBox" style="padding: 5px;" onchange="getResList(this.id)">'+
+                                        '<option value="5">5</option>'+
+                                        '<option value="10" selected>10</option>'+
+                                        '<option value="15">15</option>'+
+                                        '<option value="25">25</option>'+
+                                        '<option value="50">50</option>'+
+                                        '<option value="75">75</option>'+
+                                        '<option value="100">100</option>'+
+                                    '</select>'+
+                                    ' per page'+
+                                '</div>'+
+                                '<div class="col-4" style="text-align:center">'+
+                                    'Sort by '+
+                                    '<select id="sortBox" style="padding: 5px" onchange="getResList(this.id)">'+
+                                        '<option value="Reservation.resTime DESC, Customers.cLName ASC, Employees.eLName  ASC" selected>Date</option>'+
+                                        '<option value="Customers.cLName ASC, Customers.cFName, Reservation.resTime DESC, Employees.eLName  ASC">Customer</option>'+
+                                        '<option value="Employees.eLName ASC, Employees.eFName, Reservation.orderFillDate DESC, Customers.cLName  ASC">Employee</option>'+
+                                    '</select>'+
+                                '</div>';
+
+    conn.query(`SELECT COUNT(*) FROM Reservation;`
+        ,(err,rows,fields) => {
+            if (err) {
+                console.log(err);
+            } else {
+                pageCount = Math.ceil(rows[0]['COUNT(*)'] / resPerPg);
+
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Page '+
+                                '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getResList(this.id)">'+
+                                ' of <span id="pgCountSpan">' + pageCount + '</span>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
+            }
+        });
+
+    conn.query(`SELECT Reservation.*, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName 
+                FROM Reservation 
+                INNER JOIN Employees ON Reservation.eID = Employees.eID 
+                INNER JOIN Customers ON Reservation.cID = Customers.cID 
+                ORDER BY Reservation.resTime DESC, Customers.cLName ASC, Customers.cFName ASC, Employees.eLName  ASC, Employees.eFName  ASC LIMIT 0,` + resPerPg + `;`
+                ,(err,rows,fields) => {
+                    if (err) {
+                        console.log(err);
+                        res.send(getErrPage());
+                    } else {
+                        content += '<div id="resContainer" class="product-container">';
+
+                        for(r of rows)
+                        {
+                            content +=  '<div class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
+                                                '<div class="product-col left">'+
+                                                    '<div style="flex-direction: column; justify-content:center">'+
+                                                        '<div class="product-name">' + r.resTime.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.resTime.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                                '<div class="product-col center">'+
+                                                    '<div style="flex-direction: column; align-items:center; justif-content:center; text-align:center">'+
+                                                        '<div class="product-id">Customer(' + r.cID + ')</div>'+
+                                                        '<div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                                '<div class="product-col right">'+
+                                                    '<div style="flex-direction: column; align-items:center; justif-content:center; text-align:center">'+
+                                                        '<div class="product-id">Employee(' + r.eID + ')</div>'+
+                                                        '<div class="product-name">' + r.eFName + ' ' + r.eLName + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="collapse" id="' + r.cID + 'Collapse">'+
+                                                '<div class="card card-body" id="' + r.cID +'Card">'+
+                                                    'N/A'+
+                                                '</div>'+
+                                            '</div>';
+                        }
+
+                        content += '</div>';
+                        
+                        res.send(base.head + content + base.foot);
+                        conn.end();
+                    }
+            } );
+});
+app.post('/reservations/page', (req,res) => {
+    let pageCount;
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT COUNT(*) FROM Reservation;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
+                }
+            });
+            
+
+    conn.query(`SELECT Reservation.*, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName 
+                FROM Reservation 
+                INNER JOIN Employees ON Reservation.eID = Employees.eID 
+                INNER JOIN Customers ON Reservation.cID = Customers.cID 
+                ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `,` + data.count + `;`
+                ,(err,rows,fields) => {
+                    if (err) {
+                        console.log(err);
+                        res.send(getErrPage());
+                    } else {
+                        let content = '';
+
+                        for(r of rows)
+                        {
+                            content +=  '<div class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
+                                                '<div class="product-col left">'+
+                                                    '<div style="flex-direction: column; justify-content:center">'+
+                                                        '<div class="product-name">' + r.resTime.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.resTime.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                                '<div class="product-col center">'+
+                                                    '<div style="flex-direction: column; align-items:center; justif-content:center; text-align:center">'+
+                                                        '<div class="product-id">Customer(' + r.cID + ')</div>'+
+                                                        '<div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                                '<div class="product-col right">'+
+                                                    '<div style="flex-direction: column; align-items:center; justif-content:center; text-align:center">'+
+                                                        '<div class="product-id">Employee(' + r.eID + ')</div>'+
+                                                        '<div class="product-name">' + r.eFName + ' ' + r.eLName + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="collapse" id="' + r.cID + 'Collapse">'+
+                                                '<div class="card card-body" id="' + r.cID +'Card">'+
+                                                    'N/A'+
+                                                '</div>'+
+                                            '</div>';
+                        }
+                        
+                        res.json({"html":content, "numPages": pageCount});
+                    }
+                } );
+    conn.end();
+});
 
 //Hosted on port 2000
 app.listen(2000);
