@@ -518,8 +518,7 @@ app.get('/customers', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    let contentPt2 = '';
-    let contentPt1 =   '<script src="./js/customerPage.js"></script>'+
+    let content =   '<script src="./js/customerPage.js"></script>'+
                         '<div class="container" style="padding: 0.5em">'+
                             '<div class="row">'+
                                 '<div class="col-4" style="text-align:left">'+
@@ -552,7 +551,7 @@ app.get('/customers', (req,res) => {
             } else {
                 pageCount = Math.ceil(rows[0]['COUNT(*)'] / custPerPg);
 
-                contentPt1 +=  '<div class="col-4" style="text-align:right">'+
+                content +=  '<div class="col-4" style="text-align:right">'+
                                 'Page '+
                                 '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getCustList(this.id)">'+
                                 ' of <span id="pgCountSpan">' + pageCount + '</span>'+
@@ -568,11 +567,11 @@ app.get('/customers', (req,res) => {
                     console.log(err);
                     res.send(getErrPage());
                 } else {
-                    contentPt2 += '<div id="custContainer" class="product-container">';
+                    content += '<div id="custContainer" class="product-container">';
 
                     for(r of rows)
                     {
-                        contentPt2 +=  '<div id="' + r.cID + '" class="product-row" onclick="console.log(this.id);">'+
+                        content +=  '<div id="' + r.cID + '" class="product-row" style="margin-bottom:0;margin-top:10px" onclick="getCurrAdvert(this.id);">'+
                                             '<div class="product-col left">'+
                                                 '<div style="flex-direction: column;">'+
                                                     '<div class="product-name">' + r.cLName + ', ' + r.cFName + '</div>'+
@@ -589,15 +588,17 @@ app.get('/customers', (req,res) => {
                                                     '</div>'+
                                                 '</div>'+
                                             '</div>'+
+                                        '</div>'+
+                                        '<div class="collapse" id="' + r.cID + 'Collapse">'+
+                                            '<div class="card card-body" id="' + r.cID +'Card">'+
+                                                'N/A'+
+                                            '</div>'+
                                         '</div>';
                     }
 
-                    contentPt2 += '</div>';
+                    content += '</div>';
                     
-                    
-                    
-                    
-                    res.send(base.head + contentPt1 + contentPt2 + base.foot);
+                    res.send(base.head + content + base.foot);
                 }
             } );
 
@@ -629,7 +630,7 @@ app.post('/customer/page', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.cID + '" class="product-row" onclick="console.log(this.id);">'+
+                        content +=  '<div id="' + r.cID + '" class="product-row" onclick="getCurrAdvert(this.id);">'+
                                             '<div class="product-col left">'+
                                                 '<div style="flex-direction: column;">'+
                                                     '<div class="product-name">' + r.cLName + ', ' + r.cFName + '</div>'+
@@ -646,10 +647,99 @@ app.post('/customer/page', (req,res) => {
                                                     '</div>'+
                                                 '</div>'+
                                             '</div>'+
-                                        '</div>';
+                                        '</div>'+
+                                        '<div class="collapse" id="' + r.cID + 'Collapse">'+
+                                            '<div class="card card-body" id="' + r.cID +'Card">'+
+                                                'N/A'+
+                                            '</div>'+
+                                        '</div>';;
                     }                    
                     
                     res.json({"html":content, "numPages": pageCount});
+                }
+            } );
+
+    conn.end();
+});
+app.post('/customer/advert', (req, res) => {
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT Products.productName, Products.productType, Products.productID, Advertisement.dateAdvert
+                FROM Advertisement
+                INNER JOIN Products ON Products.productID = Advertisement.productID
+                WHERE Advertisement.cID = "` + data.id + `"
+                ORDER BY Advertisement.dateAdvert DESC LIMIT 1;`
+                    ,(err,rows,fields) => {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        let content = '<div class="container"><div class="row" style="padding: 0.5em">';
+
+                        if(rows.length > 0) {
+                           
+                                
+                            content +=  '<div class="col-12" style="text-align:center; padding-bottom: 0.75em">Current Advertisement</div>'+
+                                        '<div class="col-6" style="display:flex; align-items:center; justify-content:end; border-bottom: 2px solid;">'+
+                                            '<div class="product-name">' + rows[0].productName + '</div><div class="product-id" style="padding-left:0.25em"> (' + rows[0].productType + ')</div>'+
+                                        '</div>'+
+                                        '<div class="col-6" style="display:flex; align-items:center; justify-content:start; border-bottom: 2px solid;">'+
+                                            '<div class="product-name">' + rows[0].dateAdvert.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + rows[0].dateAdvert.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
+                                        '</div>';
+                        }
+
+                        content +=  '<div class="col-12" style="text-align:center; padding:1em">'+
+                                        '<div>Create A New Advertisement</div>'+
+                                    '</div>' +
+                                    '<div class="col-6" style="display: flex; justify-content: center">'+
+                                        '<button type="button" class="btn btn-info" onclick="createNewAdvert(`' + data.id + '`,`qty`)">Highest Quantity</button>'+
+                                    '</div>'+
+                                    '<div class="col-6" style="display: flex; justify-content: center">'+
+                                        '<button type="button" class="btn btn-info" onclick="createNewAdvert(`' + data.id + '`, `totCost`)">Highest Spent</button>'+
+                                    '</div>';
+
+                        content += '</div></div>';
+
+                        res.json({"id": data.id, "html":content});
+                    }
+            });
+
+    conn.end();
+});
+app.post('/customer/new_advert', (req,res) => {
+    let data = JSON.parse(req.headers.data);
+    let conn = newConn();
+    conn.connect();
+    
+    conn.query(`INSERT INTO Advertisement
+                 VALUES ( 
+                            "` + data.id + `",
+                            NOW(),
+                            (   
+                                SELECT 
+                                    CASE
+                                        WHEN ( (SELECT COUNT(*) FROM  Purchase WHERE cID = "` + data.id + `") > 0) 
+                                            THEN (  SELECT ProductPurchase.productID
+                                                    FROM ProductPurchase
+                                                    INNER JOIN Purchase ON Purchase.orderID = ProductPurchase.orderID
+                                                    WHERE Purchase.cID = "` + data.id + `"
+                                                    GROUP BY ProductPurchase.productID
+                                                    ORDER BY SUM(ProductPurchase.` + data.type + `) DESC LIMIT 1
+                                                    )
+                                        ELSE (SELECT productID FROM Products ORDER BY RAND() LIMIT 1)
+                                    END AS newID
+                                FROM ProductPurchase LIMIT 1
+                            )
+
+                 );`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"id": data.id, "msg": "The Advertisement was NOT successfully added to the database. Please retry."});
+                } else {
+                    res.json({"id": data.id, "msg": "The Advertisement was successfully added to the database."});
                 }
             } );
 
