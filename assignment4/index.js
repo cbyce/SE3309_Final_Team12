@@ -134,9 +134,9 @@ app.get('/products', (req,res) => {
                             '<select id="prodTypeBox" style="padding: 5px" onchange="getProdList(this.id)">'+
                                 '<option value="" selected>All</option>'+
                                 '<option value="flower">Flower</option>'+
-                                '<option value="vape">Vape</option>'+
-                                '<option value="edible">Edible</option>'+
-                                '<option value="oil">Oil</option>'+
+                                '<option value="vape">Vapes</option>'+
+                                '<option value="edible">Edibles</option>'+
+                                '<option value="oil">Oils</option>'+
                                 '<option value="other">Other</option>'+
                             '</select>'+
                             ' by '+
@@ -812,7 +812,7 @@ app.get('/purchases', (req, res) => {
                             content +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
                                                 '<div class="product-col left">'+
                                                     '<div style="flex-direction: column;">'+
-                                                        '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + '</div>'+
+                                                        '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.orderFillDate.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
                                                         '<div class="product-id">' + r.orderID + '</div>'+
                                                     '</div>'+
                                                 '</div>'+
@@ -967,6 +967,7 @@ app.post('/purchases/page', (req,res) => {
     conn.end();
 });
 
+/*-----_____----- Reservations  -----_____-----*/
 app.get('/reservations', (req, res) => {
     let pageCount = 1;
     let resPerPg = 10; //Purchases shown per page
@@ -1123,6 +1124,192 @@ app.post('/reservations/page', (req,res) => {
                         res.json({"html":content, "numPages": pageCount});
                     }
                 } );
+    conn.end();
+});
+
+/*-----_____----- Shipments -----_____-----*/
+app.get('/shipments', (req, res) => {
+    let pageCount = 1;
+    let shipPerPg = 10; //Purchases shown per page
+    let base = getPageBase("Shipments");
+    let conn = newConn();
+    conn.connect();
+
+    let content =   '<script src="./js/shipmentPage.js"></script>'+
+                        '<div class="container" style="padding: 0.5em">'+
+                            '<div class="row">'+
+                                '<div class="col-4" style="text-align:left">'+
+                                    'Showing '+
+                                    '<select id="resultCountBox" style="padding: 5px;" onchange="getShipList(this.id)">'+
+                                        '<option value="5">5</option>'+
+                                        '<option value="10" selected>10</option>'+
+                                        '<option value="15">15</option>'+
+                                        '<option value="25">25</option>'+
+                                        '<option value="50">50</option>'+
+                                        '<option value="75">75</option>'+
+                                        '<option value="100">100</option>'+
+                                    '</select>'+
+                                    ' per page'+
+                                '</div>'+
+                                '<div class="col-4" style="text-align:center">'+
+                                    'Sort by '+
+                                    '<select id="sortBox" style="padding: 5px" onchange="getShipList(this.id)">'+
+                                        '<option value="shipmentDate DESC, supplierName ASC" selected>Date</option>'+
+                                        '<option value="supplierName  ASC, shipmentDate DESC">Supplier</option>'+
+                                    '</select>'+
+                                '</div>';
+
+    conn.query(`SELECT COUNT(*) FROM Shipment;`
+        ,(err,rows,fields) => {
+            if (err) {
+                console.log(err);
+            } else {
+                pageCount = Math.ceil(rows[0]['COUNT(*)'] / shipPerPg);
+
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Page '+
+                                '<input type="number" id="pageNumBox" value="1" min="1" max="' + pageCount + '" onchange="getShipList(this.id)">'+
+                                ' of <span id="pgCountSpan">' + pageCount + '</span>'+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
+            }
+        });
+
+    conn.query(`SELECT * FROM Shipment ORDER BY shipmentDate DESC, supplierName ASC LIMIT 0,` + shipPerPg + `;`
+                ,(err,rows,fields) => {
+                    if (err) {
+                        console.log(err);
+                        res.send(getErrPage());
+                    } else {
+                        content += '<div id="shipContainer" class="product-container">';
+
+                        for(r of rows)
+                        {
+                            content +=  '<div id="' + r.shipmentID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getShipRcpt(this.id);">'+
+                                                '<div class="product-col left">'+
+                                                    '<div style="flex-direction: column;">'+
+                                                        '<div class="product-name">' + r.shipmentDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.shipmentDate.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>' +
+                                                        '<div class="product-id">' + r.shipmentID + '</div>'+
+                                                    '</div>'+
+                                                '</div>'+
+                                                '<div class="product-col center" style="flex-direction:column">'+
+                                                '</div>'+
+                                                '<div class="product-col right">'+
+                                                    '<div class="product-name">' + r.supplierName + '</div>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="collapse" id="' + r.shipmentID + 'Collapse">'+
+                                                '<div class="card card-body" id="' + r.shipmentID +'Card">'+
+                                                    'N/A'+
+                                                '</div>'+
+                                            '</div>';
+                        }
+
+                        content += '</div>';
+                        
+                        
+                        
+                        
+                        res.send(base.head  + content + base.foot);
+                        conn.end();
+                    }
+            } );
+});
+app.post('/shipments/receipts', (req,res) => {
+    let pageCount;
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT ProductShipment.productQty, Products.productName, Products.productType
+                FROM ProductShipment
+                INNER JOIN Products ON ProductShipment.productID=Products.productID
+                WHERE ProductShipment.shipmentID = "` + data.id + `"
+                ORDER BY Products.productName;`
+                    ,(err,rows,fields) => {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        let content = '<div class="container"><div class="row">';
+                        let total = 0;
+
+                        for (r of rows) {
+                            total += r.totCost;
+
+                            content +=  '<div class="col-4">'+
+                                            '<div class="product-name">' + r.productName + '</div>'+
+                                        '</div>';
+
+                            content +=  '<div class="col-4">'+
+                                            '<div style="text-align:center">' + r.productType.charAt(0).toUpperCase() + r.productType.slice(1) + '</div>'+
+                                        '</div>';
+
+                            content +=  '<div class="col-4">'+
+                                            '<div class="product-id" style="text-align:right">' + r.productQty + '</div>'+
+                                        '</div>';
+                        }
+
+                        content += '</div></div>';
+
+                        res.json({"id": data.id, "html":content});
+                    }
+            });
+
+    conn.end();
+});
+app.post('/shipments/page', (req,res) => {
+    let pageCount;
+    let data = JSON.parse(req.headers.data);
+
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT COUNT(*) FROM Shipment;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
+                }
+            });
+            
+
+    conn.query(`SELECT * FROM Shipment ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `, ` + data.count + `;`
+            ,(err,rows,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.send(getErrPage());
+                } else {
+                    let content = '';
+
+                    for(r of rows)
+                    {
+                        content +=  '<div id="' + r.shipmentID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
+                                        '<div class="product-col left">'+
+                                            '<div style="flex-direction: column;">'+
+                                                '<div class="product-name">' + r.shipmentDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.shipmentDate.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>' +
+                                                '<div class="product-id">' + r.shipmentID + '</div>'+
+                                            '</div>'+
+                                        '</div>'+
+                                        '<div class="product-col center" style="flex-direction:column">'+
+                                        '</div>'+
+                                        '<div class="product-col right">'+
+                                            '<div class="product-name">' + r.supplierName + '</div>'+
+                                        '</div>'+
+                                    '</div>'+
+                                    '<div class="collapse" id="' + r.shipmentID + 'Collapse">'+
+                                        '<div class="card card-body" id="' + r.shipmentID +'Card">'+
+                                            'N/A'+
+                                        '</div>'+
+                                    '</div>';
+                    }
+                    
+                    res.json({"html":content, "numPages": pageCount});
+                }
+            } );
+
     conn.end();
 });
 
