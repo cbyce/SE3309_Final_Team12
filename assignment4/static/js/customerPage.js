@@ -65,11 +65,11 @@ function displayAdvert()
     }
 }
 
-function createNewAdvert(id,type)
+function createNewAdvert(id,sort)
 {
     let data = {
         "id": id,
-        "type": type
+        "sort": sort
     };
 
     let xReq = new XMLHttpRequest();
