@@ -141,13 +141,13 @@ app.get('/products', (req,res) => {
                             '</select>'+
                             ' by '+
                             '<select id="sortBox" style="padding: 5px" onchange="getProdList(this.id)">'+
-                                '<option value="productName ASC, productType ASC, quantity DESC" selected>Name</option>'+
-                                '<option value="quantity DESC, productName ASC">Quantity</option>'+
-                                '<option value="quantitySold DESC, productName ASC">Quantity Sold</option>'+
+                                '<option value="productName ASC, productType ASC, quantitySold DESC" selected>Name</option>'+
+                                '<option value="quantity DESC, quantitySold DESC, productName ASC">Quantity</option>'+
+                                '<option value="quantitySold DESC, productName ASC, quantity DESC">Quantity Sold</option>'+
                             '</select>'+
                         '</div>';
     
-    conn.query(`SELECT COUNT(*) FROM Products;`
+    conn.query(`SELECT COUNT(*) FROM Product;`
         ,(err,rows,fields) => {
             if (err) {
                 console.log(err);
@@ -164,7 +164,14 @@ app.get('/products', (req,res) => {
             }
         });
     
-    conn.query(`SELECT * FROM Products ORDER BY productName ASC LIMIT 0,` + prodPerPg + `;`
+    conn.query(`SELECT p.productID, p.productName, p.productType, p.quantity, COALESCE(qtySold.totalSold, 0) quantitySold
+                FROM Product p
+                LEFT JOIN(
+                    SELECT SUM(qty) totalSold, productID
+                    FROM ProductPurchase
+                    GROUP BY productID
+                ) as qtySold ON p.productID = qtySold.productID
+                ORDER BY p.productName ASC, productType ASC, quantitySold DESC LIMIT 0,` + prodPerPg + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -223,8 +230,6 @@ app.get('/products', (req,res) => {
                                             '<input type="number" id="qtyBox" min="0" style="width:100%">'+
                                         '</div>'+
                                         '<div class="col-4">'+
-                                            '<label for="soldBox">Quantity Sold:</label><br>'+
-                                            '<input type="number" id="soldBox" min="0" style="width:100%">'+
                                         '</div>'+
                                         '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
                                             '<div><input  id="prodValid" type="checkbox"></div>'+
@@ -248,7 +253,7 @@ app.post('/products/page', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT COUNT(*) FROM Products ` + data.type + `;`
+    conn.query(`SELECT COUNT(*) FROM Product ` + data.type + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -257,7 +262,15 @@ app.post('/products/page', (req,res) => {
                 }
             });
 
-    conn.query(`SELECT * FROM Products ` + data.type + ` ORDER BY ` + data.sort + `  LIMIT ` + data.page * data.count + `, ` + data.count + `;`
+    conn.query(`SELECT p.productID, p.productName, p.productType, p.quantity, COALESCE(qtySold.totalSold, 0) quantitySold
+                FROM Product p
+                LEFT JOIN(
+                    SELECT SUM(qty) totalSold, productID
+                    FROM ProductPurchase
+                    GROUP BY productID
+                ) as qtySold ON p.productID = qtySold.productID
+                ` + data.type + `
+                ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `, ` + data.count + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -297,7 +310,7 @@ app.post('/products/info', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT * FROM Products WHERE productID = "` + data.productID + `";`
+    conn.query(`SELECT * FROM Product WHERE productID = "` + data.productID + `";`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -315,7 +328,7 @@ app.post('/products/update', (req,res) => {
     let conn = newConn();
     conn.connect();
     
-    conn.query(`UPDATE Products SET productName="` + data.name + `", productType="` + data.type + `", quantity=` + data.qty + `, quantitySold=` + data.sold + ` WHERE productID = "` + data.id + `";`
+    conn.query(`UPDATE Product SET productName="` + data.name + `", productType="` + data.type + `", quantity=` + data.qty + `, quantitySold=` + data.sold + ` WHERE productID = "` + data.id + `";`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -333,7 +346,7 @@ app.post('/products/delete', (req,res) => {
     let conn = newConn();
     conn.connect();
     
-    conn.query(`DELETE FROM Products WHERE productID = "` + data.id + `";`
+    conn.query(`DELETE FROM Product WHERE productID = "` + data.id + `";`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -351,7 +364,7 @@ app.post('/products/insert', (req,res) => {
     let conn = newConn();
     conn.connect();
     
-    conn.query(`INSERT INTO Products VALUES ( "` + data.id + `", "` + data.name + `", "` + data.type + `", ` + data.qty + `, ` + data.sold + `);`
+    conn.query(`INSERT INTO Product VALUES ( "` + data.id + `", "` + data.name + `", "` + data.type + `", ` + data.qty + `, ` + data.sold + `);`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -372,7 +385,6 @@ app.get('/employees', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    let content = '';
     let content =   '<script src="./js/employeePage.js"></script>'+
                         '<div class="container" style="padding: 0.5em">'+
                             '<div class="row">'+
@@ -416,7 +428,7 @@ app.get('/employees', (req,res) => {
 
     conn.query(`SELECT e.eID, e.eFName, e.eLName, e.hourlyPay, COALESCE(sales.totalRev, 0) revenueGenerated, COALESCE(sales.totalSales, 0) noOfSales FROM Employee e
                 LEFT JOIN (
-                    SELECT SUM(pp.totCost * pp.qty) totalRev, COUNT(*) totalSales, eID 
+                    SELECT SUM(pp.prodCost * pp.qty) totalRev, COUNT(*) totalSales, eID 
                     FROM Purchase p 
                     INNER JOIN ProductPurchase pp
                     WHERE pp.orderID = p.orderID  
@@ -481,7 +493,7 @@ app.post('/employees/page', (req,res) => {
 
     conn.query(`SELECT e.eID, e.eFName, e.eLName, e.hourlyPay, COALESCE(sales.totalRev, 0) revenueGenerated, COALESCE(sales.totalSales, 0) noOfSales FROM Employee e
                 LEFT JOIN (
-                    SELECT SUM(pp.totCost * pp.qty) totalRev, COUNT(*) totalSales, eID 
+                    SELECT SUM(pp.prodCost * pp.qty) totalRev, COUNT(*) totalSales, eID 
                     FROM Purchase p 
                     INNER JOIN ProductPurchase pp
                     WHERE pp.orderID = p.orderID  
@@ -575,8 +587,8 @@ app.get('/customers', (req,res) => {
         });
 
     conn.query(`SELECT c.cID, c.cFName, c.cLName, c.email, COALESCE(spent.total, 0) totSpent, COALESCE(visit.totVisits, 0) numVisits FROM Customer c
-                    LEFT JOIN (
-                    SELECT SUM(pp.totCost * pp.qty) total, cID 
+                LEFT JOIN (
+                    SELECT SUM(pp.prodCost * pp.qty) total, cID 
                     FROM Purchase p 
                     INNER JOIN ProductPurchase pp
                     WHERE pp.orderID = p.orderID  
@@ -649,8 +661,8 @@ app.post('/customer/page', (req,res) => {
             });
 
     conn.query(`SELECT c.cID, c.cFName, c.cLName, c.email, COALESCE(spent.total, 0) totSpent, COALESCE(visit.totVisits, 0) numVisits FROM Customer c
-                    LEFT JOIN (
-                    SELECT SUM(pp.totCost * pp.qty) total, cID 
+                LEFT JOIN (
+                    SELECT SUM(pp.prodCost * pp.qty) total, cID 
                     FROM Purchase p 
                     INNER JOIN ProductPurchase pp
                     WHERE pp.orderID = p.orderID  
@@ -710,11 +722,11 @@ app.post('/customer/advert', (req, res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT Products.productName, Products.productType, Products.productID, Advertisement.dateAdvert
-                FROM Advertisement
-                INNER JOIN Products ON Products.productID = Advertisement.productID
-                WHERE Advertisement.cID = "` + data.id + `"
-                ORDER BY Advertisement.dateAdvert DESC LIMIT 1;`
+    conn.query(`SELECT p.productName, p.productType, p.productID, a.dateAdvert
+                FROM Advertisement a
+                INNER JOIN Product p ON p.productID = a.productID
+                WHERE a.cID = "` + data.id + `"
+                ORDER BY a.dateAdvert DESC LIMIT 1;`
                     ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
@@ -737,10 +749,10 @@ app.post('/customer/advert', (req, res) => {
                                         '<div>Create A New Advertisement</div>'+
                                     '</div>' +
                                     '<div class="col-6" style="display: flex; justify-content: center">'+
-                                        '<button type="button" class="btn btn-info" onclick="createNewAdvert(`' + data.id + '`,`SUM(pp.qty) DESC, SUM(pp.totCost) DESC`)">Highest Quantity</button>'+
+                                        '<button type="button" class="btn btn-info" onclick="createNewAdvert(`' + data.id + '`,`SUM(pp.qty) DESC, SUM(pp.prodCost * pp.qty) DESC`)">Highest Quantity</button>'+
                                     '</div>'+
                                     '<div class="col-6" style="display: flex; justify-content: center">'+
-                                        '<button type="button" class="btn btn-info" onclick="createNewAdvert(`' + data.id + '`, `SUM(pp.totCost) DESC, SUM(pp.qty) DESC`)">Highest Spent</button>'+
+                                        '<button type="button" class="btn btn-info" onclick="createNewAdvert(`' + data.id + '`, `SUM(pp.prodCost * pp.qty) DESC, SUM(pp.qty) DESC`)">Highest Spent</button>'+
                                     '</div>';
 
                         content += '</div></div>';
@@ -751,7 +763,6 @@ app.post('/customer/advert', (req, res) => {
 
     conn.end();
 });
-//NEEDS COST EDIT for qty vs TotSold
 app.post('/customer/new_advert', (req,res) => {
     let data = JSON.parse(req.headers.data);
     let conn = newConn();
@@ -773,7 +784,7 @@ app.post('/customer/new_advert', (req,res) => {
                                                 GROUP BY pp.productID
                                                 ORDER BY ` + data.sort + ` LIMIT 1
                                                 )
-                                        ELSE (SELECT productID FROM Products ORDER BY RAND() LIMIT 1)
+                                        ELSE (SELECT productID FROM Product ORDER BY RAND() LIMIT 1)
                                     END AS newID
                                 FROM ProductPurchase LIMIT 1
                             )
@@ -818,10 +829,10 @@ app.get('/purchases', (req, res) => {
                                 '<div class="col-4" style="text-align:center">'+
                                     'Sort by '+
                                     '<select id="sortBox" style="padding: 5px" onchange="getPurchList(this.id)">'+
-                                        '<option value="Purchase.orderFillDate DESC, Customer.cLName ASC, Employee.eLName  ASC" selected>Date</option>'+
-                                        '<option value="Customer.cLName ASC, Customer.cFName, Purchase.orderFillDate DESC, Employee.eLName  ASC">Customer</option>'+
-                                        '<option value="Employee.eLName ASC, Employee.eFName, Purchase.orderFillDate DESC, Customer.cLName  ASC">Employee</option>'+
-                                        '<option value="orderTotal DESC, Purchase.orderFillDate DESC, Customer.cLName ASC, Employee.eLName ASC">Total Spent</option>'+
+                                        '<option value="p.orderFillDate DESC, c.cLName ASC, e.eLName  ASC" selected>Date</option>'+
+                                        '<option value="c.cLName ASC, c.cFName, p.orderFillDate DESC, e.eLName  ASC">Customer</option>'+
+                                        '<option value="e.eLName ASC, e.eFName, p.orderFillDate DESC, c.cLName  ASC">Employee</option>'+
+                                        '<option value="orderTotal DESC, p.orderFillDate DESC, c.cLName ASC, e.eLName ASC">Total Spent</option>'+
                                     '</select>'+
                                 '</div>';
 
@@ -842,13 +853,13 @@ app.get('/purchases', (req, res) => {
             }
         });
 
-    conn.query(`SELECT Purchase.*, SUM(ProductPurchase.totCost) orderTotal, Employee.eFName, Employee.eLName, Customer.cFName, Customer.cLName, Customer.email 
-                FROM Purchase 
-                INNER JOIN ProductPurchase ON Purchase.orderID = ProductPurchase.orderID 
-                INNER JOIN Employee ON Purchase.eID = Employee.eID 
-                INNER JOIN Customer ON Purchase.cID = Customer.cID 
+    conn.query(`SELECT p.*, SUM(pp.prodCost * pp.qty) orderTotal, e.eFName, e.eLName, c.cFName, c.cLName, c.email 
+                FROM Purchase p
+                INNER JOIN ProductPurchase pp ON p.orderID = pp.orderID 
+                INNER JOIN Employee e ON p.eID = e.eID 
+                INNER JOIN Customer c ON p.cID = c.cID 
                 GROUP BY orderID
-                ORDER BY Purchase.orderFillDate DESC, orderTotal DESC, Customer.cLName ASC, Customer.cFName ASC, Employee.eLName  ASC, Employee.eFName  ASC LIMIT 0,` + purchPerPg + `;`
+                ORDER BY p.orderFillDate DESC, orderTotal DESC, c.cLName ASC, c.cFName ASC, e.eLName  ASC, e.eFName  ASC LIMIT 0,` + purchPerPg + `;`
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
@@ -900,11 +911,11 @@ app.post('/purchases/receipts', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT ProductPurchase.qty, ProductPurchase.totCost, Products.productName, Products.productType
-                FROM ProductPurchase
-                INNER JOIN Products ON ProductPurchase.productID=Products.productID
-                WHERE ProductPurchase.orderID = "` + data.order + `"
-                ORDER BY Products.productName;`
+    conn.query(`SELECT pp.qty, pp.prodCost, p.productName, p.productType
+                FROM ProductPurchase pp
+                INNER JOIN Product p ON pp.productID = p.productID
+                WHERE pp.orderID = "` + data.order + `"
+                ORDER BY p.productName ASC;`
                     ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
@@ -913,7 +924,7 @@ app.post('/purchases/receipts', (req,res) => {
                         let total = 0;
 
                         for (r of rows) {
-                            total += r.totCost;
+                            total += r.prodCost * r.qty;
 
                             content +=  '<div class="col-4">'+
                                             '<div class="product-name">' + r.productName + '</div>'+
@@ -930,11 +941,11 @@ app.post('/purchases/receipts', (req,res) => {
                                             '<div class="product-id" style="text-align:center"> @ </div>'+
                                         '</div>';
                             content +=  '<div class="col-1">'+
-                                            '<div class="product-id" style="text-align:right">'+ currency.format(r.totCost/r.qty) + '</div>'+
+                                            '<div class="product-id" style="text-align:right">'+ currency.format(r.prodCost) + '</div>'+
                                         '</div>';
 
                             content +=  '<div class="col-3">'+
-                                            '<div style="text-align:right">' + currency.format(r.totCost) + '</div>'+
+                                            '<div style="text-align:right">' + currency.format(r.prodCost * r.qty) + '</div>'+
                                         '</div>';
 
 
@@ -968,11 +979,11 @@ app.post('/purchases/page', (req,res) => {
             });
             
 
-    conn.query(`SELECT Purchase.*, SUM(ProductPurchase.totCost) orderTotal, Employee.eFName, Employee.eLName, Customer.cFName, Customer.cLName, Customer.email 
-                FROM Purchase 
-                INNER JOIN ProductPurchase ON Purchase.orderID = ProductPurchase.orderID 
-                INNER JOIN Employee ON Purchase.eID = Employee.eID 
-                INNER JOIN Customer ON Purchase.cID = Customer.cID 
+    conn.query(`SELECT p.*, SUM(pp.prodCost * pp.qty) orderTotal, e.eFName, e.eLName, c.cFName, c.cLName, c.email 
+                FROM Purchase p
+                INNER JOIN ProductPurchase pp ON p.orderID = pp.orderID 
+                INNER JOIN Employee e ON p.eID = e.eID 
+                INNER JOIN Customer c ON p.cID = c.cID 
                 GROUP BY orderID
                 ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `, ` + data.count + `;` //ORDER BY ` + data.sort+ ` ect
             ,(err,rows,fields) => {
@@ -1043,9 +1054,9 @@ app.get('/reservations', (req, res) => {
                                 '<div class="col-4" style="text-align:center">'+
                                     'Sort by '+
                                     '<select id="sortBox" style="padding: 5px" onchange="getResList(this.id)">'+
-                                        '<option value="Reservation.resTime DESC, Customer.cLName ASC, Employee.eLName  ASC" selected>Date</option>'+
-                                        '<option value="Customer.cLName ASC, Customer.cFName, Reservation.resTime DESC, Employee.eLName  ASC">Customer</option>'+
-                                        '<option value="Employee.eLName ASC, Employee.eFName, Reservation.resTime DESC, Customer.cLName  ASC">Employee</option>'+
+                                        '<option value="r.resTime DESC, c.cLName ASC, e.eLName  ASC" selected>Date</option>'+
+                                        '<option value="c.cLName ASC, c.cFName ASC, r.resTime DESC, e.eLName  ASC">Customer</option>'+
+                                        '<option value="e.eLName ASC, e.eFName ASC, r.resTime DESC, c.cLName  ASC">Employee</option>'+
                                     '</select>'+
                                 '</div>';
 
@@ -1066,11 +1077,11 @@ app.get('/reservations', (req, res) => {
             }
         });
 
-    conn.query(`SELECT Reservation.*, Employee.eFName, Employee.eLName, Customer.cFName, Customer.cLName 
-                FROM Reservation 
-                INNER JOIN Employee ON Reservation.eID = Employee.eID 
-                INNER JOIN Customer ON Reservation.cID = Customer.cID 
-                ORDER BY Reservation.resTime DESC, Customer.cLName ASC, Customer.cFName ASC, Employee.eLName  ASC, Employee.eFName  ASC LIMIT 0,` + resPerPg + `;`
+    conn.query(`SELECT r.*, e.eFName, e.eLName, c.cFName, c.cLName 
+                FROM Reservation r
+                INNER JOIN Employee e ON r.eID = e.eID 
+                INNER JOIN Customer c ON r.cID = c.cID 
+                ORDER BY r.resTime DESC, c.cLName ASC, c.cFName ASC, e.eLName  ASC, e.eFName  ASC LIMIT 0,` + resPerPg + `;`
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
@@ -1130,10 +1141,10 @@ app.post('/reservations/page', (req,res) => {
             });
             
 
-    conn.query(`SELECT Reservation.*, .eFName, Employee.eLName, Customer.cFName, Customer.cLName 
-                FROM Reservation 
-                INNER JOIN Employee ON Reservation.eID = Employee.eID 
-                INNER JOIN Customer ON Reservation.cID = Customer.cID 
+    conn.query(`SELECT r.*, e.eFName, e.eLName, c.cFName, c.cLName 
+                FROM Reservation r
+                INNER JOIN Employee e ON r.eID = e.eID 
+                INNER JOIN Customer c ON r.cID = c.cID 
                 ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `,` + data.count + `;`
                 ,(err,rows,fields) => {
                     if (err) {
@@ -1272,21 +1283,18 @@ app.post('/shipments/receipts', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT ProductShipment.productQty, Products.productName, Products.productType
-                FROM ProductShipment
-                INNER JOIN Products ON ProductShipment.productID=Products.productID
-                WHERE ProductShipment.shipmentID = "` + data.id + `"
-                ORDER BY Products.productName;`
+    conn.query(`SELECT ps.productQty, p.productName, p.productType
+                FROM ProductShipment ps
+                INNER JOIN Product p ON ps.productID = p.productID
+                WHERE ps.shipmentID = "` + data.id + `"
+                ORDER BY p.productName;`
                     ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
                     } else {
                         let content = '<div class="container"><div class="row">';
-                        let total = 0;
 
                         for (r of rows) {
-                            total += r.totCost;
-
                             content +=  '<div class="col-4">'+
                                             '<div class="product-name">' + r.productName + '</div>'+
                                         '</div>';
@@ -1335,7 +1343,7 @@ app.post('/shipments/page', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.shipmentID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
+                        content +=  '<div id="' + r.shipmentID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getShipRcpt(this.id);">'+
                                         '<div class="product-col left">'+
                                             '<div style="flex-direction: column;">'+
                                                 '<div class="product-name">' + r.shipmentDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.shipmentDate.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>' +
@@ -1361,6 +1369,142 @@ app.post('/shipments/page', (req,res) => {
 
     conn.end();
 });
+
+
+/*-----_____----- Home Page -----_____-----*/
+app.get('/getEmployeeOfMonth', (req, res) => {
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT SUM(OrderTable.orderTot) empTot, emp.eFName, emp.eLName
+                FROM Purchase purch
+                INNER JOIN (
+                    SELECT SUM(pp.qty * pp. prodCost) orderTot, pp.orderID
+                    FROM ProductPurchase pp
+                    GROUP BY pp.orderID
+                ) AS OrderTable ON OrderTable.orderID = purch.orderID
+                INNER JOIN Employee emp ON emp.eID = purch.eID 
+                WHERE orderFillDate 
+                BETWEEN CONCAT(LAST_DAY(NOW() - INTERVAL 2 MONTH) + INTERVAL 1 DAY, ' 00:00:00') 
+                AND CONCAT(LAST_DAY(NOW() - INTERVAL 1 MONTH), ' 23:59:59')
+                GROUP BY purch.eID
+                ORDER BY empTot DESC LIMIT 1;`
+            ,(err,row,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"name": "ERROR", "tot": "ERROR", "month": "ERROR"});
+                } else {
+                    let r = row[0];
+                    var date = new Date();
+                    date.setDate(1);
+                    date.setMonth(date.getMonth()-1);
+                    
+                    res.json({
+                                "name": r.eFName + " " + r.eLName, 
+                                "sales": currency.format(r.empTot),
+                                "month": date.toLocaleDateString("en-US", {month:"long"})
+                            });
+                }
+            } );
+});
+app.get('/getCustomerOfMonth', (req, res) => {
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT SUM(OrderTable.orderTot) custTot, cust.cFName, cust.cLName
+                FROM Purchase purch
+                INNER JOIN (
+                    SELECT SUM(pp.qty * pp. prodCost) orderTot, pp.orderID
+                    FROM ProductPurchase pp
+                    GROUP BY pp.orderID
+                ) AS OrderTable ON OrderTable.orderID = purch.orderID
+                INNER JOIN Customer cust ON cust.cID = purch.cID 
+                WHERE orderFillDate 
+                BETWEEN CONCAT(LAST_DAY(NOW() - INTERVAL 2 MONTH) + INTERVAL 1 DAY, ' 00:00:00') 
+                AND CONCAT(LAST_DAY(NOW() - INTERVAL 1 MONTH), ' 23:59:59')
+                GROUP BY purch.cID
+                ORDER BY custTot DESC LIMIT 1;`
+            ,(err,row,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"name": "ERROR", "tot": "ERROR", "month": "ERROR"});
+                } else {
+                    let r = row[0];
+                    var date = new Date();
+                    date.setDate(1);
+                    date.setMonth(date.getMonth()-1);
+                    
+                    res.json({
+                                "name": r.cFName + " " + r.cLName, 
+                                "sales": currency.format(r.custTot),
+                                "month": date.toLocaleDateString("en-US", {month:"long"})
+                            });
+                }
+            } );
+});
+app.get('/getProdSalesOfMonth', (req, res) => {
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT prod.productName, prod.productType, SUM(ProPur.qty * ProPur.prodCost) totSales
+                FROM Purchase purch
+                INNER JOIN ProductPurchase ProPur ON ProPur.orderID = purch.orderID
+                INNER JOIN Product prod ON prod.productID = ProPur.productID
+                WHERE orderFillDate 
+                BETWEEN CONCAT(LAST_DAY(NOW() - INTERVAL 2 MONTH) + INTERVAL 1 DAY, ' 00:00:00') 
+                AND CONCAT(LAST_DAY(NOW() - INTERVAL 1 MONTH), ' 23:59:59')
+                GROUP BY ProPur.productID
+                ORDER BY totSales DESC LIMIT 1;`
+            ,(err,row,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"name": "ERROR", "tot": "ERROR", "month": "ERROR"});
+                } else {
+                    let r = row[0];
+                    var date = new Date();
+                    date.setDate(1);
+                    date.setMonth(date.getMonth()-1);
+                    
+                    res.json({
+                                "name": r.productName + " - " + r.productType, 
+                                "sales": currency.format(r.totSales),
+                                "month": date.toLocaleDateString("en-US", {month:"long"})
+                            });
+                }
+            } );
+});
+app.get('/getProdQtyOfMonth', (req, res) => {
+    let conn = newConn();
+    conn.connect();
+
+    conn.query(`SELECT prod.productName, prod.productType, SUM(ProPur.qty) totQty
+                FROM Purchase purch
+                INNER JOIN ProductPurchase ProPur ON ProPur.orderID = purch.orderID
+                INNER JOIN Product prod ON prod.productID = ProPur.productID
+                WHERE orderFillDate 
+                BETWEEN CONCAT(LAST_DAY(NOW() - INTERVAL 2 MONTH) + INTERVAL 1 DAY, ' 00:00:00') 
+                AND CONCAT(LAST_DAY(NOW() - INTERVAL 1 MONTH), ' 23:59:59')
+                GROUP BY ProPur.productID
+                ORDER BY totQty DESC LIMIT 1;`
+            ,(err,row,fields) => {
+                if (err) {
+                    console.log(err);
+                    res.json({"name": "ERROR", "tot": "ERROR", "month": "ERROR"});
+                } else {
+                    let r = row[0];
+                    var date = new Date();
+                    date.setDate(1);
+                    date.setMonth(date.getMonth()-1);
+                    
+                    res.json({
+                                "name": r.productName + " - " + r.productType, 
+                                "qty": r.totQty,
+                                "month": date.toLocaleDateString("en-US", {month:"long"})
+                            });
+                }
+            } );
+});
+
 
 //Hosted on port 2000
 app.listen(2000);

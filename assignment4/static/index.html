@@ -19,10 +19,13 @@
 
     <!-- Tab icon -->
     <link rel="icon" href="./imgs/weed-leaf-leafcircle.png">
+
+    <!-- Home Page Script -->
+    <script src="./js/homePage.js"></script>
     
     <title>Team 12 Employee</title>
 </head>
-<body>
+<body onload="populateHomePage()">
     <div class="page-nav">
         <div class="header nav-left">
             <div style="font-weight:bold; font-size: 2.25rem"><i class="fas fa-cannabis"></i> &nbsp; Employee Portal</div>
@@ -62,6 +65,32 @@
     </div>
 
     <div class="default-page">
+        <div class="container">
+            <div class="row">
+                <div class="col-6" style="display:flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div><span id="empMonth"></span> Employee Of The Month</div>
+                    <div id="empName"></div>
+                    <div id="empSales"></div>
+                </div>
+                <div class="col-6" style="display:flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div><span id="custMonth"></span> Customer Of The Month</div>
+                    <div id="custName"></div>
+                    <div id="custSales"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6" style="display:flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div><span id="prodSalesMonth"></span> Top Earning Product</div>
+                    <div id="prodSalesName"></div>
+                    <div id="prodSalesTotal"></div>
+                </div>
+                <div class="col-6" style="display:flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div><span id="prodQtyMonth"></span> Top Sold Product</div>
+                    <div id="prodQtyName"></div>
+                    <div id="prodQtyTotal"></div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="footer-pos">
