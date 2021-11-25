@@ -533,14 +533,14 @@ app.get('/customers', (req,res) => {
                                 '<div class="col-4" style="text-align:center">'+
                                     'Sort by '+
                                     '<select id="sortBox" style="padding: 5px" onchange="getCustList(this.id)">'+
-                                        '<option value="cLName, cFName " selected>Name</option>'+
-                                        '<option value="email, cLName">Email</option>'+
-                                        '<option value="numVisits, cLName">Visits</option>'+
-                                        '<option value="totSpent, cLName">Spent</option>'+
+                                        '<option value="cLName ASC, cFName ASC" selected>Name</option>'+
+                                        '<option value="email ASC, cLName ASC, cFName ASC">Email</option>'+
+                                        '<option value="numVisits DESC, cLName ASC, cFName ASC">Visits</option>'+
+                                        '<option value="totSpent DESC, cLName ASC, cFName ASC">Spent</option>'+
                                     '</select>'+
                                 '</div>';
 
-    conn.query(`SELECT COUNT(*) FROM Customers;`
+    conn.query(`SELECT COUNT(*) FROM Customer;`
         ,(err,rows,fields) => {
             if (err) {
                 console.log(err);
@@ -557,7 +557,22 @@ app.get('/customers', (req,res) => {
             }
         });
 
-    conn.query(`SELECT * FROM Customers ORDER BY cLName, cFName ASC LIMIT 0,` + custPerPg + `;`
+    conn.query(`SELECT c.cID, c.cFName, c.cLName, c.email, COALESCE(spent.total, 0) totSpent, COALESCE(visit.totVisits, 0) numVisits FROM Customer c
+                    LEFT JOIN (
+                    SELECT SUM(pp.totCost * pp.qty) total, cID 
+                    FROM Purchase p 
+                    INNER JOIN ProductPurchase pp
+                    WHERE pp.orderID = p.orderID  
+                    GROUP BY p.cID) 
+                AS spent  ON spent.cID = c.cID
+                LEFT JOIN (
+                    SELECT COUNT(*) totVisits, cID 
+                    FROM Reservation r 
+                    WHERE r.resTime < CURRENT_TIME
+                    GROUP BY r.cID
+                ) AS visit ON  visit.cID = c.cID
+                ORDER BY cLName ASC, cFName ASC
+                LIMIT 0,` + custPerPg + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -579,7 +594,7 @@ app.get('/customers', (req,res) => {
                                             '</div>'+
                                             '<div class="product-col right">'+
                                                 '<div style="flex-direction: column; width: 175px">'+
-                                                    '<div style="display:flex; justify-content:space-between"><div>Visits: </div><div> ' + r.numVisits + '</div></div>'+
+                                                    '<div style="display:flex; justify-content:space-between"><div>Visits: </div><div> ' + parseInt(r.numVisits) + '</div></div>'+
                                                     '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Spent: </div><div>' + currency.format(r.totSpent) + '</div>'+
                                                     '</div>'+
                                                 '</div>'+
@@ -607,7 +622,7 @@ app.post('/customer/page', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT COUNT(*) FROM Customers;`
+    conn.query(`SELECT COUNT(*) FROM Customer;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -616,7 +631,22 @@ app.post('/customer/page', (req,res) => {
                 }
             });
 
-    conn.query(`SELECT * FROM Customers ORDER BY ` + data.sort + ` ASC  LIMIT ` + data.page * data.count + `, ` + data.count + `;`
+    conn.query(`SELECT c.cID, c.cFName, c.cLName, c.email, COALESCE(spent.total, 0) totSpent, COALESCE(visit.totVisits, 0) numVisits FROM Customer c
+                    LEFT JOIN (
+                    SELECT SUM(pp.totCost * pp.qty) total, cID 
+                    FROM Purchase p 
+                    INNER JOIN ProductPurchase pp
+                    WHERE pp.orderID = p.orderID  
+                    GROUP BY p.cID) 
+                AS spent  ON spent.cID = c.cID
+                LEFT JOIN (
+                    SELECT COUNT(*) totVisits, cID 
+                    FROM Reservation r 
+                    WHERE r.resTime < CURRENT_TIME
+                    GROUP BY r.cID
+                ) AS visit ON  visit.cID = c.cID 
+                ORDER BY ` + data.sort + `  
+                LIMIT ` + data.page * data.count + `, ` + data.count + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -704,6 +734,7 @@ app.post('/customer/advert', (req, res) => {
 
     conn.end();
 });
+//NEEDS COST EDIT for qty vs TotSold
 app.post('/customer/new_advert', (req,res) => {
     let data = JSON.parse(req.headers.data);
     let conn = newConn();
@@ -769,10 +800,10 @@ app.get('/purchases', (req, res) => {
                                 '<div class="col-4" style="text-align:center">'+
                                     'Sort by '+
                                     '<select id="sortBox" style="padding: 5px" onchange="getPurchList(this.id)">'+
-                                        '<option value="Purchase.orderFillDate DESC, Customers.cLName ASC, Employees.eLName  ASC" selected>Date</option>'+
-                                        '<option value="Customers.cLName ASC, Customers.cFName, Purchase.orderFillDate DESC, Employees.eLName  ASC">Customer</option>'+
-                                        '<option value="Employees.eLName ASC, Employees.eFName, Purchase.orderFillDate DESC, Customers.cLName  ASC">Employee</option>'+
-                                        '<option value="orderTotal DESC, Purchase.orderFillDate DESC, Customers.cLName ASC, Employees.eLName ASC">Total Spent</option>'+
+                                        '<option value="Purchase.orderFillDate DESC, Customer.cLName ASC, Employees.eLName  ASC" selected>Date</option>'+
+                                        '<option value="Customer.cLName ASC, Customer.cFName, Purchase.orderFillDate DESC, Employees.eLName  ASC">Customer</option>'+
+                                        '<option value="Employees.eLName ASC, Employees.eFName, Purchase.orderFillDate DESC, Customer.cLName  ASC">Employee</option>'+
+                                        '<option value="orderTotal DESC, Purchase.orderFillDate DESC, Customer.cLName ASC, Employees.eLName ASC">Total Spent</option>'+
                                     '</select>'+
                                 '</div>';
 
@@ -793,13 +824,13 @@ app.get('/purchases', (req, res) => {
             }
         });
 
-    conn.query(`SELECT Purchase.*, SUM(ProductPurchase.totCost) orderTotal, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName, Customers.email 
+    conn.query(`SELECT Purchase.*, SUM(ProductPurchase.totCost) orderTotal, Employees.eFName, Employees.eLName, Customer.cFName, Customer.cLName, Customer.email 
                 FROM Purchase 
                 INNER JOIN ProductPurchase ON Purchase.orderID = ProductPurchase.orderID 
                 INNER JOIN Employees ON Purchase.eID = Employees.eID 
-                INNER JOIN Customers ON Purchase.cID = Customers.cID 
+                INNER JOIN Customer ON Purchase.cID = Customer.cID 
                 GROUP BY orderID
-                ORDER BY Purchase.orderFillDate DESC, orderTotal DESC, Customers.cLName ASC, Customers.cFName ASC, Employees.eLName  ASC, Employees.eFName  ASC LIMIT 0,` + purchPerPg + `;`
+                ORDER BY Purchase.orderFillDate DESC, orderTotal DESC, Customer.cLName ASC, Customer.cFName ASC, Employees.eLName  ASC, Employees.eFName  ASC LIMIT 0,` + purchPerPg + `;`
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
@@ -919,11 +950,11 @@ app.post('/purchases/page', (req,res) => {
             });
             
 
-    conn.query(`SELECT Purchase.*, SUM(ProductPurchase.totCost) orderTotal, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName, Customers.email 
+    conn.query(`SELECT Purchase.*, SUM(ProductPurchase.totCost) orderTotal, Employees.eFName, Employees.eLName, Customer.cFName, Customer.cLName, Customer.email 
                 FROM Purchase 
                 INNER JOIN ProductPurchase ON Purchase.orderID = ProductPurchase.orderID 
                 INNER JOIN Employees ON Purchase.eID = Employees.eID 
-                INNER JOIN Customers ON Purchase.cID = Customers.cID 
+                INNER JOIN Customer ON Purchase.cID = Customer.cID 
                 GROUP BY orderID
                 ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `, ` + data.count + `;` //ORDER BY ` + data.sort+ ` ect
             ,(err,rows,fields) => {
@@ -994,9 +1025,9 @@ app.get('/reservations', (req, res) => {
                                 '<div class="col-4" style="text-align:center">'+
                                     'Sort by '+
                                     '<select id="sortBox" style="padding: 5px" onchange="getResList(this.id)">'+
-                                        '<option value="Reservation.resTime DESC, Customers.cLName ASC, Employees.eLName  ASC" selected>Date</option>'+
-                                        '<option value="Customers.cLName ASC, Customers.cFName, Reservation.resTime DESC, Employees.eLName  ASC">Customer</option>'+
-                                        '<option value="Employees.eLName ASC, Employees.eFName, Reservation.orderFillDate DESC, Customers.cLName  ASC">Employee</option>'+
+                                        '<option value="Reservation.resTime DESC, Customer.cLName ASC, Employees.eLName  ASC" selected>Date</option>'+
+                                        '<option value="Customer.cLName ASC, Customer.cFName, Reservation.resTime DESC, Employees.eLName  ASC">Customer</option>'+
+                                        '<option value="Employees.eLName ASC, Employees.eFName, Reservation.resTime DESC, Customer.cLName  ASC">Employee</option>'+
                                     '</select>'+
                                 '</div>';
 
@@ -1017,11 +1048,11 @@ app.get('/reservations', (req, res) => {
             }
         });
 
-    conn.query(`SELECT Reservation.*, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName 
+    conn.query(`SELECT Reservation.*, Employees.eFName, Employees.eLName, Customer.cFName, Customer.cLName 
                 FROM Reservation 
                 INNER JOIN Employees ON Reservation.eID = Employees.eID 
-                INNER JOIN Customers ON Reservation.cID = Customers.cID 
-                ORDER BY Reservation.resTime DESC, Customers.cLName ASC, Customers.cFName ASC, Employees.eLName  ASC, Employees.eFName  ASC LIMIT 0,` + resPerPg + `;`
+                INNER JOIN Customer ON Reservation.cID = Customer.cID 
+                ORDER BY Reservation.resTime DESC, Customer.cLName ASC, Customer.cFName ASC, Employees.eLName  ASC, Employees.eFName  ASC LIMIT 0,` + resPerPg + `;`
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
@@ -1081,10 +1112,10 @@ app.post('/reservations/page', (req,res) => {
             });
             
 
-    conn.query(`SELECT Reservation.*, Employees.eFName, Employees.eLName, Customers.cFName, Customers.cLName 
+    conn.query(`SELECT Reservation.*, Employees.eFName, Employees.eLName, Customer.cFName, Customer.cLName 
                 FROM Reservation 
                 INNER JOIN Employees ON Reservation.eID = Employees.eID 
-                INNER JOIN Customers ON Reservation.cID = Customers.cID 
+                INNER JOIN Customer ON Reservation.cID = Customer.cID 
                 ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `,` + data.count + `;`
                 ,(err,rows,fields) => {
                     if (err) {
