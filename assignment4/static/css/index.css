@@ -168,3 +168,28 @@ body{
     font-weight: bold;
     font-size: 125%;
 }
+
+.home-col{
+    display:flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center;
+    border: 2px solid black;
+    border-radius: 7px;
+    padding: 5px 15px;
+    box-shadow: 2px 3px rgb(0, 0, 0, 25%);
+    margin:10px 0;
+}
+
+.home-desc{
+    border-bottom:2px solid black; 
+    width:100%; 
+    text-align:center;
+    padding: 0.25em;
+}
+
+.home-name{
+    padding: 0.25em;
+    font-weight: bold;
+    font-size: 115%;
+}
