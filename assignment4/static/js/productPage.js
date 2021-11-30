@@ -11,7 +11,7 @@ function updateProduct(id)
         };
 
         let xReq = new XMLHttpRequest();
-        xReq.onreadystatechange = displayFeedback;
+        xReq.onreadystatechange = displayUpdateFeedback;
 
         xReq.open('POST','/products/update',true);
         xReq.setRequestHeader('data', JSON.stringify(data));
@@ -24,10 +24,10 @@ function updateProduct(id)
 function insertProduct()
 {
     
-    if ($("#nameBox").val() != "" && $("#nameBox").val() != " " && $('#prodValid').prop("checked")) {
+    if ($("#nameBox").val() != "" && $("#nameBox").val() != " ") {
         let data = {
             "id":   getRandID(),
-            "name": ($("#nameBox").val()).charAt(0).toUpperCase() + ($("#nameBox").val()).slice(1),
+            "name": ( ($("#nameBox").val()).charAt(0).toUpperCase() + ($("#nameBox").val()).slice(1).toLowerCase() ),
             "type": $("#typeBox :selected").val(),
             "qty":  parseInt($('#qtyBox').val()),
             "price": parseFloat($('#priceBox').val())
@@ -36,7 +36,7 @@ function insertProduct()
         //ADD ERROR HANDELING
 
         let xReq = new XMLHttpRequest();
-        xReq.onreadystatechange = displayFeedback;
+        xReq.onreadystatechange = displayAlertFeedback;
 
         xReq.open('POST','/products/insert',true);
         xReq.setRequestHeader('data', JSON.stringify(data));
@@ -46,7 +46,7 @@ function insertProduct()
     }
 }
 
-function displayFeedback()
+function displayUpdateFeedback()
 {
     if (this.readyState == 4 && this.status == 200)
     {
@@ -63,6 +63,16 @@ function displayFeedback()
         } else {
             alert(msg.msg);
         }
+    }
+}
+
+function displayAlertFeedback() 
+{
+    if (this.readyState == 4 && this.status == 200)
+    {
+        let msg = JSON.parse(this.responseText);
+
+        alert(msg.msg);
     }
 }
 

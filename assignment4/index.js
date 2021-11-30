@@ -202,7 +202,7 @@ app.get('/products', (req,res) => {
                                         '<div class="card card-body" id="' + r.productID +'Card">'+
                                             '<div class="row" style="padding: 0.5em">'+
                                                 '<div class="col-4">'+
-                                                    '<label for="' + r.productID + 'idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
+                                                    '<label for="' + r.productID + 'idBox">ID:</label><br>'+
                                                     '<input type="text" id="' + r.productID + 'idBox" value="' + r.productID + '" style="width:100%; cursor: not-allowed" readonly>'+
                                                 '</div>'+
                                                 '<div class="col-4">'+
@@ -230,7 +230,7 @@ app.get('/products', (req,res) => {
                                                     '<input type="number" id="' + r.productID + 'qtyBox" min="0" value="' + r.quantity + '" style="width:100%">'+
                                                 '</div>'+
                                                 '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
-                                                    '<div><input  id="' + r.productID + 'prodValid" type="checkbox"></div>'+
+                                                    '<div>Validate: &nbsp; <input  id="' + r.productID + 'prodValid" type="checkbox"/></div>'+
                                                     '<button id="' + r.productID + 'prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct(`' + r.productID + '`);">Update</button>'+
                                                 '</div>'+
                                             '</div>'+
@@ -241,17 +241,23 @@ app.get('/products', (req,res) => {
                     content += '</div>';
 
                     //Changes box
-                    /* content += '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">'+
+                    content += '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em; margin-top:10px;">'+
                                     '<div class="row" style="padding: 0.5em">'+
-                                        '<div class="col-4">'+
-                                            '<label for="idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
-                                            '<input type="text" id="idBox" value="" style="width:100%; cursor: not-allowed" readonly>'+
-                                        '</div>'+
                                         '<div class="col-4">'+
                                             '<label for="nameBox">Name:</label><br>'+
                                             '<input type="text" id="nameBox" value="" style="width:100%">'+
                                         '</div>'+
                                         '<div class="col-4">'+
+                                            '<label for="priceBox">Price:</label><br>'+
+                                            '<input type="number" id="priceBox" step="0.01" min="0" style="width:100%">'+
+                                        '</div>'+
+                                        '<div class="col-4">'+
+                                            '<label for="qtyBox">Quantity:</label><br>'+
+                                            '<input type="number" id="qtyBox" min="0" style="width:100%">'+
+                                        '</div>'+
+                                    '</div>'+
+                                    '<div class="row" style="padding: 0.5em">'+
+                                        '<div class="col-8">'+
                                             '<label for="typeBox">Type:</label><br>'+
                                             '<select id="typeBox" style="width: 100%; height: 30px;">'+
                                                 '<option value="flower">Flower</option>'+
@@ -261,22 +267,11 @@ app.get('/products', (req,res) => {
                                                 '<option value="other">Other</option>'+
                                             '</select>'+
                                         '</div>'+
-                                    '</div>'+
-                                    '<div class="row" style="padding: 0.5em">'+
-                                        '<div class="col-4">'+
-                                            '<label for="priceBox">Price:</label><br>'+
-                                            '<input type="number" id="priceBox" min="0" style="width:100%">'+
-                                        '</div>'+
-                                        '<div class="col-4">'+
-                                            '<label for="qtyBox">Quantity:</label><br>'+
-                                            '<input type="number" id="qtyBox" min="0" style="width:100%">'+
-                                        '</div>'+
-                                        '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
-                                            '<div><input  id="prodValid" type="checkbox"></div>'+
-                                            '<button id="prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct();">Update</button>'+
+                                        '<div class="col-4" style="display:flex; justify-content: center; align-items:end">'+
+                                            '<button id="prodUptBtn" type="button" class="btn btn-success" style="width: 85px" onclick="insertProduct();">Add</button>'+
                                         '</div>'+
                                     '</div>'+
-                                '</div>'; */
+                                '</div>';
                     
                     res.send(base.head + content + base.foot);
                 }
@@ -340,7 +335,7 @@ app.post('/products/page', (req,res) => {
                                         '<div class="card card-body" id="' + r.productID +'Card">'+
                                             '<div class="row" style="padding: 0.5em">'+
                                                 '<div class="col-4">'+
-                                                    '<label for="' + r.productID + 'idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
+                                                    '<label for="' + r.productID + 'idBox">ID:</label><br>'+
                                                     '<input type="text" id="' + r.productID + 'idBox" value="' + r.productID + '" style="width:100%; cursor: not-allowed" readonly>'+
                                                 '</div>'+
                                                 '<div class="col-4">'+
@@ -368,7 +363,7 @@ app.post('/products/page', (req,res) => {
                                                     '<input type="number" id="' + r.productID + 'qtyBox" min="0" value="' + r.quantity + '" style="width:100%">'+
                                                 '</div>'+
                                                 '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
-                                                    '<div><input  id="' + r.productID + 'prodValid" type="checkbox"></div>'+
+                                                    '<div>Validate: &nbsp; <input  id="' + r.productID + 'prodValid" type="checkbox"/></div>'+
                                                     '<button id="' + r.productID + 'prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct(`' + r.productID + '`);">Update</button>'+
                                                 '</div>'+
                                             '</div>'+
@@ -401,31 +396,13 @@ app.post('/products/update', (req,res) => {
 
     conn.end();
 });
-/* app.post('/products/delete', (req,res) => {
-    let data = JSON.parse(req.headers.data);
-
-    let conn = newConn();
-    conn.connect();
-    
-    conn.query(`DELETE FROM Product WHERE productID = "` + data.id + `";`
-            ,(err,rows,fields) => {
-                if (err) {
-                    console.log(err);
-                    res.json({"msg": "" + data.id + ") was NOT successfully deleted from the database. Please retry.", "error":true, "id": data.id});
-                } else {
-                    res.json({"msg": "" + data.id + " was successfully deleted from the database. Refresh the page to see changes in the table.", "error":false, "id": data.id});
-                }
-            } );
-
-    conn.end(); 
-}); */
 app.post('/products/insert', (req,res) => {
     let data = JSON.parse(req.headers.data);
 
     let conn = newConn();
     conn.connect();
     
-    conn.query(`INSERT INTO Product VALUES ( "` + data.id + `", "` + data.name + `", "` + data.type + `", ` + data.qty + `, ` + data.sold + `);`
+    conn.query(`INSERT INTO Product VALUES ( "` + data.id + `", "` + data.name + `", "` + data.type + `", ` + data.price + `, ` + data.qty + `);`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
