@@ -6,7 +6,7 @@ function newConn()
         host:'localhost',
         user: 'root',
         password:'MySQL3309@uwo',
-        database:'3309_test'
+        database:'team12'
     });
     return conn;
 }

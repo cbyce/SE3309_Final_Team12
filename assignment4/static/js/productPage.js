@@ -1,14 +1,13 @@
-//const getRandID = require('./api/randomId.js');
 
-function updateProduct()
+function updateProduct(id)
 {
-    if ($("#idBox").val() != "" && $('#prodValid').prop("checked")) {
+    if ($("#" + id + "idBox").val() != "" && $('#' + id + 'prodValid').prop("checked")) {
         let data = {
-            "id":   $("#idBox").val(),
-            "name": ($("#nameBox").val()).charAt(0).toUpperCase() + ($("#nameBox").val()).slice(1),
-            "type": $("#typeBox :selected").val(),
-            "qty":  parseInt($('#qtyBox').val()),
-            "sold": parseInt($('#soldBox').val())
+            "id":   $("#" + id + "idBox").val(),
+            "name": ( ($("#" + id + "nameBox").val()).charAt(0).toUpperCase() + ($("#" + id + "nameBox").val()).slice(1).toLowerCase() ),
+            "type": $("#" + id + "typeBox :selected").val(),
+            "qty":  parseInt($('#' + id + 'qtyBox').val()),
+            "price": parseFloat($('#' + id + 'priceBox').val())
         };
 
         let xReq = new XMLHttpRequest();
@@ -18,23 +17,9 @@ function updateProduct()
         xReq.setRequestHeader('data', JSON.stringify(data));
         xReq.send(); 
     } else {
-        $('#prodUptBtn').blur();
+        $('#' + id + 'prodUptBtn').blur();
     }
-}
-
-function deleteProduct()
-{
-    if ($("#idBox").val() != "" && $('#prodValid').prop("checked")) {
-        let xReq = new XMLHttpRequest();
-        xReq.onreadystatechange = displayFeedback;
-
-        xReq.open('POST','/products/delete',true);
-        xReq.setRequestHeader('data', '{"id": "' + $("#idBox").val() + '"}');
-        xReq.send();
-    } else {
-        $('#prodDelBtn').blur();
-    }
-}
+} 
 
 function insertProduct()
 {
@@ -44,20 +29,11 @@ function insertProduct()
             "id":   getRandID(),
             "name": ($("#nameBox").val()).charAt(0).toUpperCase() + ($("#nameBox").val()).slice(1),
             "type": $("#typeBox :selected").val(),
-            "qty":  0,
-            "sold": 0
+            "qty":  parseInt($('#qtyBox').val()),
+            "price": parseFloat($('#priceBox').val())
         };
 
-        let qtyNum = parseInt($('#qtyBox').val());
-        let soldNum = parseInt($('#soldBox').val())
-
-        if(!isNaN(qtyNum)) {
-            data.qty = qtyNum;
-        }
-
-        if(!isNaN(soldNum)) {
-            data.sold = soldNum;
-        }
+        //ADD ERROR HANDELING
 
         let xReq = new XMLHttpRequest();
         xReq.onreadystatechange = displayFeedback;
@@ -74,39 +50,32 @@ function displayFeedback()
 {
     if (this.readyState == 4 && this.status == 200)
     {
-        $('#prodValid').prop("checked", false); //Unchecks the validation box
         let msg = JSON.parse(this.responseText);
-        alert(msg.msg);
+
+        $('#' + msg.data.id + 'prodValid').prop("checked", false); //Unchecks the validation box
+
+        if (!msg.error) {
+            $('#' + msg.data.id + 'ProdName').html(msg.data.name);
+            $('#' + msg.data.id + 'ProdType').html((msg.data.type).charAt(0).toUpperCase() + (msg.data.type).slice(1));
+            $('#' + msg.data.id + 'ProdPrice').html(msg.data.price);
+            $('#' + msg.data.id + 'ProdQty').html(msg.data.qty);
+            $('#' + msg.data.id + 'Collapse').collapse('hide');
+        } else {
+            alert(msg.msg);
+        }
     }
 }
 
-function prepProductDisplay(id)
+function collapseProdDisp(id)
 {
-    let xReq = new XMLHttpRequest();
-    xReq.onreadystatechange = fillProdDisplay;
-
-    xReq.open('POST','/products/info',true);
-    xReq.setRequestHeader('data', '{"productID": "' + id + '"}');
-    xReq.send();
+    if($('#' + id + 'Collapse').hasClass('show')) {
+        $('#' + id + 'Collapse').collapse('hide');
+    } else {
+        $('#' + id + 'Collapse').collapse('show');
+    }
 }
 
-function fillProdDisplay()
-{
-    if (this.readyState == 4 && this.status == 200)
-    {
-        let msg = JSON.parse(this.responseText);
-        
-        if(msg.err) {
-            //Handle error
-        } else {
-            $("#idBox").val(msg.prod.productID);
-            $("#nameBox").val(msg.prod.productName);
-            $("#typeBox option[value='" + msg.prod.productType + "']").attr("selected", "selected");
-            $('#qtyBox').val(msg.prod.quantity);
-            $('#soldBox').val(msg.prod.quantitySold);
-        }
-    }   
-}
+
 
 function getProdList(id)
 {
@@ -127,14 +96,14 @@ function getProdList(id)
     };
 
     let xReq = new XMLHttpRequest();
-    xReq.onreadystatechange = displayEmployeeList;
+    xReq.onreadystatechange = displayProductsList;
 
     xReq.open('POST','/products/page',true);
     xReq.setRequestHeader('data', JSON.stringify(data));
     xReq.send(); 
 }
 
-function displayEmployeeList()
+function displayProductsList()
 {
     if (this.readyState == 4 && this.status == 200)
     {

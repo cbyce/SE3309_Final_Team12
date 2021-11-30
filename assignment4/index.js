@@ -1,6 +1,5 @@
 const express = require('express');
 const newConn = require('./js/conn/connection.js');
-//INCORPERATE PROMISES ?
 const app = express();
 
 app.use(express.static('static'));
@@ -143,7 +142,7 @@ app.get('/products', (req,res) => {
                             '<select id="sortBox" style="padding: 5px" onchange="getProdList(this.id)">'+
                                 '<option value="productName ASC, productType ASC, quantitySold DESC" selected>Name</option>'+
                                 '<option value="quantity DESC, quantitySold DESC, productName ASC">Quantity</option>'+
-                                '<option value="quantitySold DESC, productName ASC, quantity DESC">Quantity Sold</option>'+
+                                '<option value="productPrice DESC, productName ASC, productType ASC">Price</option>'+
                             '</select>'+
                         '</div>';
     
@@ -164,7 +163,7 @@ app.get('/products', (req,res) => {
             }
         });
     
-    conn.query(`SELECT p.productID, p.productName, p.productType, p.quantity, COALESCE(qtySold.totalSold, 0) quantitySold
+    conn.query(`SELECT p.productID, p.productName, p.productType, p.quantity, p.productPrice, COALESCE(qtySold.totalSold, 0) quantitySold
                 FROM Product p
                 LEFT JOIN(
                     SELECT SUM(qty) totalSold, productID
@@ -181,20 +180,59 @@ app.get('/products', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.productID + '" class="product-row" onclick="prepProductDisplay(this.id);">'+
+                        content +=  '<div id="' + r.productID + '" class="product-row" onclick="collapseProdDisp(this.id);">'+
                                         '<div class="product-col left">'+
                                             '<div style="flex-direction: column;">'+
-                                                '<div class="product-name">' + r.productName+ '</div>'+
+                                                '<div class="product-name" id="' + r.productID + 'ProdName">' + r.productName+ '</div>'+
                                                 '<div class="product-id">' + r.productID + '</div>'+
                                             '</div>'+
                                         '</div>'+
-                                        '<div class="product-col center">'+
-                                            '<div class="product-type">' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
+                                        '<div class="product-col center" style="display:flex; flex-direction: row; align-items:center; justify-content:space-between;">'+
+                                            '<div class="product-type" id="' + r.productID + 'ProdType" style="width:50%; text-align:center;">' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
+                                            '<div class="product-type" id="' + r.productID + 'ProdPrice" style="width:50%; text-align:center;">' + currency.format(r.productPrice) + '</div>'+
                                         '</div>'+
                                         '<div class="product-col right">'+
                                             '<div style="flex-direction: column; width: 175px">'+
-                                                '<div style="display:flex; justify-content:space-between"><div>Qty: </div><div> ' + r.quantity + '</div></div>'+
+                                                '<div style="display:flex; justify-content:space-between"><div>Qty: </div><div id="' + r.productID + 'ProdQty"> ' + r.quantity + '</div></div>'+
                                                 '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Qty Sold: </div><div>' + r.quantitySold + '</div></div>'+
+                                            '</div>'+
+                                        '</div>'+
+                                    '</div>' +
+                                    '<div class="collapse" id="' + r.productID + 'Collapse">'+
+                                        '<div class="card card-body" id="' + r.productID +'Card">'+
+                                            '<div class="row" style="padding: 0.5em">'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
+                                                    '<input type="text" id="' + r.productID + 'idBox" value="' + r.productID + '" style="width:100%; cursor: not-allowed" readonly>'+
+                                                '</div>'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'nameBox">Name:</label><br>'+
+                                                    '<input type="text" id="' + r.productID + 'nameBox" value="' + r.productName + '" style="width:100%">'+
+                                                '</div>'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'typeBox">Type:</label><br>'+
+                                                    '<select id="' + r.productID + 'typeBox" style="width: 100%; height: 30px;">'+
+                                                        '<option value="flower" ' + ((r.productType == "flower") ? 'selected': '') + '>Flower</option>'+
+                                                        '<option value="vape" ' + ((r.productType == "vape") ? 'selected': '') + '>Vape</option>'+
+                                                        '<option value="edible" ' + ((r.productType == "edible") ? 'selected': '') + '>Edible</option>'+
+                                                        '<option value="oil" ' + ((r.productType == "oil") ? 'selected': '') + '>Oil</option>'+
+                                                        '<option value="other" ' + ((["flower","vape", "edible","oil"].includes(r.productType)) ? '': 'selected') + '>Other</option>'+
+                                                    '</select>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="row" style="padding: 0.5em">'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'priceBox">Price:</label><br>'+
+                                                    '<input type="number" id="' + r.productID +'priceBox" min="0" step="0.01" value="' + r.productPrice + '" style="width:100%">'+
+                                                '</div>'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'qtyBox">Quantity:</label><br>'+
+                                                    '<input type="number" id="' + r.productID + 'qtyBox" min="0" value="' + r.quantity + '" style="width:100%">'+
+                                                '</div>'+
+                                                '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
+                                                    '<div><input  id="' + r.productID + 'prodValid" type="checkbox"></div>'+
+                                                    '<button id="' + r.productID + 'prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct(`' + r.productID + '`);">Update</button>'+
+                                                '</div>'+
                                             '</div>'+
                                         '</div>'+
                                     '</div>';
@@ -203,7 +241,7 @@ app.get('/products', (req,res) => {
                     content += '</div>';
 
                     //Changes box
-                    content += '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">'+
+                    /* content += '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em">'+
                                     '<div class="row" style="padding: 0.5em">'+
                                         '<div class="col-4">'+
                                             '<label for="idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
@@ -226,19 +264,19 @@ app.get('/products', (req,res) => {
                                     '</div>'+
                                     '<div class="row" style="padding: 0.5em">'+
                                         '<div class="col-4">'+
+                                            '<label for="priceBox">Price:</label><br>'+
+                                            '<input type="number" id="priceBox" min="0" style="width:100%">'+
+                                        '</div>'+
+                                        '<div class="col-4">'+
                                             '<label for="qtyBox">Quantity:</label><br>'+
                                             '<input type="number" id="qtyBox" min="0" style="width:100%">'+
                                         '</div>'+
-                                        '<div class="col-4">'+
-                                        '</div>'+
                                         '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
                                             '<div><input  id="prodValid" type="checkbox"></div>'+
-                                            '<button id="prodDelBtn" type="button" class="btn btn-danger" style="width: 85px" onclick="deleteProduct();">Delete</button>'+
                                             '<button id="prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct();">Update</button>'+
-                                            '<button id="prodAddBtn" type="button" class="btn btn-success" style="width: 85px" onclick="insertProduct();">Add</button>'+
                                         '</div>'+
                                     '</div>'+
-                                '</div>';
+                                '</div>'; */
                     
                     res.send(base.head + content + base.foot);
                 }
@@ -262,7 +300,7 @@ app.post('/products/page', (req,res) => {
                 }
             });
 
-    conn.query(`SELECT p.productID, p.productName, p.productType, p.quantity, COALESCE(qtySold.totalSold, 0) quantitySold
+    conn.query(`SELECT p.productID, p.productName, p.productType, p.quantity, p.productPrice, COALESCE(qtySold.totalSold, 0) quantitySold
                 FROM Product p
                 LEFT JOIN(
                     SELECT SUM(qty) totalSold, productID
@@ -280,20 +318,59 @@ app.post('/products/page', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.productID + '" class="product-row" onclick="prepProductDisplay(this.id);">'+
+                        content +=  '<div id="' + r.productID + '" class="product-row" onclick="collapseProdDisp(this.id);">'+
                                         '<div class="product-col left">'+
                                             '<div style="flex-direction: column;">'+
-                                                '<div class="product-name">' + r.productName+ '</div>'+
+                                                '<div class="product-name" id="' + r.productID + 'ProdName">' + r.productName+ '</div>'+
                                                 '<div class="product-id">' + r.productID + '</div>'+
                                             '</div>'+
                                         '</div>'+
-                                        '<div class="product-col center">'+
-                                            '<div class="product-type">' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
+                                        '<div class="product-col center" style="display:flex; flex-direction: row; align-items:center; justify-content:space-between;">'+
+                                            '<div class="product-type" id="' + r.productID + 'ProdType" style="width:50%; text-align:center;">' + (r.productType).charAt(0).toUpperCase() + (r.productType).slice(1) + '</div>'+
+                                            '<div class="product-type" id="' + r.productID + 'ProdPrice" style="width:50%; text-align:center;">' + currency.format(r.productPrice) + '</div>'+
                                         '</div>'+
                                         '<div class="product-col right">'+
                                             '<div style="flex-direction: column; width: 175px">'+
-                                                '<div style="display:flex; justify-content:space-between"><div>Qty: </div><div> ' + r.quantity + '</div></div>'+
+                                                '<div style="display:flex; justify-content:space-between"><div>Qty: </div><div id="' + r.productID + 'ProdQty"> ' + r.quantity + '</div></div>'+
                                                 '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Qty Sold: </div><div>' + r.quantitySold + '</div></div>'+
+                                            '</div>'+
+                                        '</div>'+
+                                    '</div>'+
+                                    '<div class="collapse" id="' + r.productID + 'Collapse">'+
+                                        '<div class="card card-body" id="' + r.productID +'Card">'+
+                                            '<div class="row" style="padding: 0.5em">'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'idBox">ID: <span style="font-size:50%; color:grey;"> Click on a product to fill slot. (Does not matter when adding products")</span></label><br>'+
+                                                    '<input type="text" id="' + r.productID + 'idBox" value="' + r.productID + '" style="width:100%; cursor: not-allowed" readonly>'+
+                                                '</div>'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'nameBox">Name:</label><br>'+
+                                                    '<input type="text" id="' + r.productID + 'nameBox" value="' + r.productName + '" style="width:100%">'+
+                                                '</div>'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'typeBox">Type:</label><br>'+
+                                                    '<select id="' + r.productID + 'typeBox" style="width: 100%; height: 30px;">'+
+                                                        '<option value="flower" ' + ((r.productType == "flower") ? 'selected': '') + '>Flower</option>'+
+                                                        '<option value="vape" ' + ((r.productType == "vape") ? 'selected': '') + '>Vape</option>'+
+                                                        '<option value="edible" ' + ((r.productType == "edible") ? 'selected': '') + '>Edible</option>'+
+                                                        '<option value="oil" ' + ((r.productType == "oil") ? 'selected': '') + '>Oil</option>'+
+                                                        '<option value="other" ' + ((["flower","vape", "edible","oil"].includes(r.productType)) ? '': 'selected') + '>Other</option>'+
+                                                    '</select>'+
+                                                '</div>'+
+                                            '</div>'+
+                                            '<div class="row" style="padding: 0.5em">'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'priceBox">Price:</label><br>'+
+                                                    '<input type="number" id="' + r.productID +'priceBox" step="0.01" min="0" value="' + r.productPrice + '" style="width:100%">'+
+                                                '</div>'+
+                                                '<div class="col-4">'+
+                                                    '<label for="' + r.productID + 'qtyBox">Quantity:</label><br>'+
+                                                    '<input type="number" id="' + r.productID + 'qtyBox" min="0" value="' + r.quantity + '" style="width:100%">'+
+                                                '</div>'+
+                                                '<div class="col-4" style="display:flex; justify-content: space-between; align-items:end">'+
+                                                    '<div><input  id="' + r.productID + 'prodValid" type="checkbox"></div>'+
+                                                    '<button id="' + r.productID + 'prodUptBtn" type="button" class="btn btn-primary" style="width: 85px" onclick="updateProduct(`' + r.productID + '`);">Update</button>'+
+                                                '</div>'+
                                             '</div>'+
                                         '</div>'+
                                     '</div>';
@@ -305,42 +382,26 @@ app.post('/products/page', (req,res) => {
 
     conn.end();
 });
-app.post('/products/info', (req,res) => {
-    let data = JSON.parse(req.headers.data);
-    let conn = newConn();
-    conn.connect();
-
-    conn.query(`SELECT * FROM Product WHERE productID = "` + data.productID + `";`
-            ,(err,rows,fields) => {
-                if (err) {
-                    console.log(err);
-                    res.json({"err": true});
-                } else {
-                    res.json({"err": false, "prod": rows[0]});
-                }
-            } );
-
-    conn.end();
-});
 app.post('/products/update', (req,res) => {
     let data = JSON.parse(req.headers.data);
 
     let conn = newConn();
     conn.connect();
     
-    conn.query(`UPDATE Product SET productName="` + data.name + `", productType="` + data.type + `", quantity=` + data.qty + `, quantitySold=` + data.sold + ` WHERE productID = "` + data.id + `";`
+    conn.query(`UPDATE Product SET productName="` + data.name + `", productType="` + data.type + `", quantity=` + data.qty + `, productPrice=` + data.price +` WHERE productID = "` + data.id + `";`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.json({"msg": "" + data.id + " (" + data.name + ") was NOT successfully updated in the database. Please retry."});
+                    res.json({"msg": "" + data.id + " (" + data.name + ") was NOT successfully updated in the database. Please retry.", "error":true, "data": data});
                 } else {
-                    res.json({"msg": "" + data.id + " (" + data.name + ") was successfully updated in the database. Refresh the page to see changes in the table."});
+                    data.price = currency.format(data.price);
+                    res.json({"msg": "" + data.id + " (" + data.name + ") was successfully updated in the database. Refresh the page to see changes in the table.", "error": false, "data": data});
                 }
             } );
 
     conn.end();
 });
-app.post('/products/delete', (req,res) => {
+/* app.post('/products/delete', (req,res) => {
     let data = JSON.parse(req.headers.data);
 
     let conn = newConn();
@@ -350,14 +411,14 @@ app.post('/products/delete', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.json({"msg": "" + data.id + ") was NOT successfully deleted from the database. Please retry."});
+                    res.json({"msg": "" + data.id + ") was NOT successfully deleted from the database. Please retry.", "error":true, "id": data.id});
                 } else {
-                    res.json({"msg": "" + data.id + " was successfully deleted from the database. Refresh the page to see changes in the table."});
+                    res.json({"msg": "" + data.id + " was successfully deleted from the database. Refresh the page to see changes in the table.", "error":false, "id": data.id});
                 }
             } );
 
     conn.end(); 
-});
+}); */
 app.post('/products/insert', (req,res) => {
     let data = JSON.parse(req.headers.data);
 
@@ -611,7 +672,7 @@ app.get('/customers', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.cID + '" class="product-row" style="margin-bottom:0;margin-top:10px" onclick="getCurrAdvert(this.id);">'+
+                        content +=  '<div id="' + r.cID + '" class="product-row" onclick="getCurrAdvert(this.id);">'+
                                             '<div class="product-col left">'+
                                                 '<div style="flex-direction: column;">'+
                                                     '<div class="product-name">' + r.cLName + ', ' + r.cFName + '</div>'+
@@ -685,7 +746,7 @@ app.post('/customer/page', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.cID + '" class="product-row" style="margin-bottom:0;margin-top:10px" onclick="getCurrAdvert(this.id);">'+
+                        content +=  '<div id="' + r.cID + '" class="product-row" onclick="getCurrAdvert(this.id);">'+
                                             '<div class="product-col left">'+
                                                 '<div style="flex-direction: column;">'+
                                                     '<div class="product-name">' + r.cLName + ', ' + r.cFName + '</div>'+
@@ -869,7 +930,7 @@ app.get('/purchases', (req, res) => {
 
                         for(r of rows)
                         {
-                            content +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
+                            content +=  '<div id="' + r.orderID + '" class="product-row" onclick="getPurchRcpt(this.id);">'+
                                                 '<div class="product-col left">'+
                                                     '<div style="flex-direction: column;">'+
                                                         '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.orderFillDate.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
@@ -878,7 +939,7 @@ app.get('/purchases', (req, res) => {
                                                 '</div>'+
                                                 '<div class="product-col center" style="flex-direction:column">'+
                                                     '<div class="product-type">' + r.email + '</div>'+
-                                                    '<div class="product-type" style="font-weight:bold">' + currency.format(parseInt(r.orderTotal)) + '</div>'+
+                                                    '<div class="product-type" style="font-weight:bold">' + currency.format(r.orderTotal) + '</div>'+
                                                 '</div>'+
                                                 '<div class="product-col right">'+
                                                     '<div style="flex-direction: column; width: 350px">'+
@@ -995,7 +1056,7 @@ app.post('/purchases/page', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.orderID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getPurchRcpt(this.id);">'+
+                        content +=  '<div id="' + r.orderID + '" class="product-row" onclick="getPurchRcpt(this.id);">'+
                                             '<div class="product-col left">'+
                                                 '<div style="flex-direction: column;">'+
                                                     '<div class="product-name">' + r.orderFillDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + '</div>'+
@@ -1004,7 +1065,7 @@ app.post('/purchases/page', (req,res) => {
                                             '</div>'+
                                             '<div class="product-col center" style="flex-direction:column">'+
                                                 '<div class="product-type">' + r.email + '</div>'+
-                                                '<div class="product-type" style="font-weight:bold">' + currency.format(parseInt(r.orderTotal)) + '</div>'+
+                                                '<div class="product-type" style="font-weight:bold">' + currency.format(r.orderTotal) + '</div>'+
                                             '</div>'+
                                             '<div class="product-col right">'+
                                                 '<div style="flex-direction: column; width: 350px">'+
@@ -1091,7 +1152,7 @@ app.get('/reservations', (req, res) => {
 
                         for(r of rows)
                         {
-                            content +=  '<div class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
+                            content +=  '<div class="product-row" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
                                                 '<div class="product-col left">'+
                                                     '<div style="flex-direction: column; justify-content:center">'+
                                                         '<div class="product-name">' + r.resTime.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.resTime.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
@@ -1155,7 +1216,7 @@ app.post('/reservations/page', (req,res) => {
 
                         for(r of rows)
                         {
-                            content +=  '<div class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
+                            content +=  '<div class="product-row" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
                                                 '<div class="product-col left">'+
                                                     '<div style="flex-direction: column; justify-content:center">'+
                                                         '<div class="product-name">' + r.resTime.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.resTime.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
@@ -1246,7 +1307,7 @@ app.get('/shipments', (req, res) => {
 
                         for(r of rows)
                         {
-                            content +=  '<div id="' + r.shipmentID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getShipRcpt(this.id);">'+
+                            content +=  '<div id="' + r.shipmentID + '" class="product-row" onclick="getShipRcpt(this.id);">'+
                                                 '<div class="product-col left">'+
                                                     '<div style="flex-direction: column;">'+
                                                         '<div class="product-name">' + r.shipmentDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.shipmentDate.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>' +
@@ -1283,7 +1344,7 @@ app.post('/shipments/receipts', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT ps.productQty, p.productName, p.productType
+    conn.query(`SELECT ps.productQuantity, p.productName, p.productType
                 FROM ProductShipment ps
                 INNER JOIN Product p ON ps.productID = p.productID
                 WHERE ps.shipmentID = "` + data.id + `"
@@ -1304,7 +1365,7 @@ app.post('/shipments/receipts', (req,res) => {
                                         '</div>';
 
                             content +=  '<div class="col-4">'+
-                                            '<div class="product-id" style="text-align:right">' + r.productQty + '</div>'+
+                                            '<div class="product-id" style="text-align:right">' + r.productQuantity + '</div>'+
                                         '</div>';
                         }
 
@@ -1343,7 +1404,7 @@ app.post('/shipments/page', (req,res) => {
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.shipmentID + '" class="product-row" style="margin-bottom: 0; margin-top: 10px;" onclick="getShipRcpt(this.id);">'+
+                        content +=  '<div id="' + r.shipmentID + '" class="product-row" onclick="getShipRcpt(this.id);">'+
                                         '<div class="product-col left">'+
                                             '<div style="flex-direction: column;">'+
                                                 '<div class="product-name">' + r.shipmentDate.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.shipmentDate.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>' +
@@ -1379,7 +1440,7 @@ app.get('/getEmployeeOfMonth', (req, res) => {
     conn.query(`SELECT SUM(OrderTable.orderTot) empTot, emp.eFName, emp.eLName
                 FROM Purchase purch
                 INNER JOIN (
-                    SELECT SUM(pp.qty * pp. prodCost) orderTot, pp.orderID
+                    SELECT SUM(pp.qty * pp.prodCost) orderTot, pp.orderID
                     FROM ProductPurchase pp
                     GROUP BY pp.orderID
                 ) AS OrderTable ON OrderTable.orderID = purch.orderID
