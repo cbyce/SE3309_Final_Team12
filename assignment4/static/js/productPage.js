@@ -60,9 +60,10 @@ function displayUpdateFeedback()
             $('#' + msg.data.id + 'ProdPrice').html(msg.data.price);
             $('#' + msg.data.id + 'ProdQty').html(msg.data.qty);
             $('#' + msg.data.id + 'Collapse').collapse('hide');
-        } else {
-            alert(msg.msg);
-        }
+        } 
+        
+        alert(msg.msg);
+        
     }
 }
 

@@ -390,7 +390,7 @@ app.post('/products/update', (req,res) => {
                     res.json({"msg": "" + data.id + " (" + data.name + ") was NOT successfully updated in the database. Please retry.", "error":true, "data": data});
                 } else {
                     data.price = currency.format(data.price);
-                    res.json({"msg": "" + data.id + " (" + data.name + ") was successfully updated in the database. Refresh the page to see changes in the table.", "error": false, "data": data});
+                    res.json({"msg": "" + data.id + " (" + data.name + ") was successfully updated in the database.", "error": false, "data": data});
                 }
             } );
 
