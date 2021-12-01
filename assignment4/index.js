@@ -93,11 +93,36 @@ function getPageBase(pageTitle) {
 }
 
 //Change to incorperate error code display
-function getErrPage() {
-    let base = getPageBase('Error'); 
+function getErrPage(page, type) {
+    let base = getPageBase(page + ' ' +  type + ' error  '); 
 
-    return (base.head + 'An Error Has Occured, Please try again later.' + base.foot);
+    return (base.head +  getErrTxt(page, type) + base.foot);
 }
+function getErrTxt(page, type) {
+    let txt = '<div style="height:100%; width:100%; color: red; text-align:center">Error<br>';
+    switch (type)
+    {
+        case 'data':
+            txt += 'Data could not be fetched for the ' + page + ' page';
+            break;
+        case 'advert':
+            txt += 'This customers advertisement could not be fetched';
+            break;
+        case 'ShipRcpt':
+            txt += 'This shipments receipt could not be fetched';
+            break;
+        case 'PurchRcpt':
+            txt += 'This purchases receipt could not be fetched';
+            break;
+        default:
+            txt += 'An unknown error has occured while trying to access the ' + page + ' page';
+            break;
+    }
+
+    txt += '<br>Please refresh the page or try again later</div>';
+
+    return txt;
+} 
 // Create our number formatter.
 var currency = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -174,7 +199,7 @@ app.get('/products', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.send(getErrPage());
+                    res.send(getErrPage('Products', 'data'));
                 } else {
                     content += '<div class="product-container" id="prodContainer">';
 
@@ -240,7 +265,7 @@ app.get('/products', (req,res) => {
 
                     content += '</div>';
 
-                    //Changes box
+                    // Add product box
                     content += '<div class="container" style="border: 2px solid black;border-radius: 7px; padding: 0.75em; margin-top:10px;">'+
                                     '<div class="row" style="padding: 0.5em">'+
                                         '<div class="col-4">'+
@@ -307,7 +332,7 @@ app.post('/products/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.send(getErrPage());
+                    res.json({"html": getErrTxt('Products','data'), "numPages": 0});
                 } else {
                     let content = '';
 
@@ -370,7 +395,6 @@ app.post('/products/page', (req,res) => {
                                         '</div>'+
                                     '</div>';
                     }                    
-                    
                     res.json({"html":content, "numPages": pageCount});
                 }
             } );
@@ -398,7 +422,6 @@ app.post('/products/update', (req,res) => {
 });
 app.post('/products/insert', (req,res) => {
     let data = JSON.parse(req.headers.data);
-
     let conn = newConn();
     conn.connect();
     
@@ -411,14 +434,13 @@ app.post('/products/insert', (req,res) => {
                     res.json({"msg": "" + data.id + " (" + data.name + ") was successfully added to the database. Refresh the page to see changes in the table."});
                 }
             } );
-
     conn.end(); 
 });
 
 /*-----_____----- Employees -----_____-----*/
 app.get('/employees', (req,res) => {
     let pageCount = 1;
-    let empPerPg = 10; //EMployees shown per page
+    let empPerPg = 10; // Employees shown per page
     let base = getPageBase("Employees");
     let conn = newConn();
     conn.connect();
@@ -477,13 +499,13 @@ app.get('/employees', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.send(getErrPage());
+                    res.send(getErrPage('Employees', 'data'));
                 } else {
                     content += '<div id="empContainer" class="product-container">';
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.eID + '" class="product-row" onclick="console.log(this.id);">'+
+                        content +=  '<div id="' + r.eID + '" class="product-row" style="cursor:default">'+
                                         '<div class="product-col left">'+
                                             '<div style="flex-direction: column;">'+
                                                 '<div class="product-name">' + r.eLName + ', ' + r.eFName + '</div>'+
@@ -501,11 +523,7 @@ app.get('/employees', (req,res) => {
                                         '</div>'+
                                     '</div>';
                     }
-
                     content += '</div>';
-                    
-                    
-                    
                     
                     res.send(base.head + content + base.foot);
                 }
@@ -541,13 +559,13 @@ app.post('/employees/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.send(getErrPage());
+                    res.json({"html": getErrTxt('Employees','data'), "numPages": 0});
                 } else {
                     let content = '';
 
                     for(r of rows)
                     {
-                        content +=  '<div id="' + r.eID + '" class="product-row" onclick="console.log(this.id);">'+
+                        content +=  '<div id="' + r.eID + '" class="product-row" style="cursor:default">'+
                                         '<div class="product-col left">'+
                                             '<div style="flex-direction: column;">'+
                                                 '<div class="product-name">' + r.eLName + ', ' + r.eFName + '</div>'+
@@ -565,7 +583,6 @@ app.post('/employees/page', (req,res) => {
                                         '</div>'+
                                     '</div>';
                     }                    
-                    
                     res.json({"html":content, "numPages": pageCount});
                 }
             } );
@@ -576,7 +593,7 @@ app.post('/employees/page', (req,res) => {
 /*-----_____----- Customers -----_____-----*/
 app.get('/customers', (req,res) => {
     let pageCount = 1;
-    let custPerPg = 10; //Customers shown per page
+    let custPerPg = 10; // Customers shown per page
     let base = getPageBase("Customers");
     let conn = newConn();
     conn.connect();
@@ -643,7 +660,7 @@ app.get('/customers', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.send(getErrPage());
+                    res.send(getErrPage('Customers', 'data'));
                 } else {
                     content += '<div id="custContainer" class="product-container">';
 
@@ -673,7 +690,6 @@ app.get('/customers', (req,res) => {
                                             '</div>'+
                                         '</div>';
                     }
-
                     content += '</div>';
                     
                     res.send(base.head + content + base.foot);
@@ -717,7 +733,7 @@ app.post('/customer/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.send(getErrPage());
+                    res.json({"html": getErrTxt('Customers', 'data'), "numPages": 0});
                 } else {
                     let content = '';
 
@@ -747,11 +763,9 @@ app.post('/customer/page', (req,res) => {
                                             '</div>'+
                                         '</div>';;
                     }                    
-                    
                     res.json({"html":content, "numPages": pageCount});
                 }
             } );
-
     conn.end();
 });
 app.post('/customer/advert', (req, res) => {
@@ -768,6 +782,7 @@ app.post('/customer/advert', (req, res) => {
                     ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
+                        res.json({"id": data.id, "html": getErrTxt('Advertisement', 'advert')});
                     } else {
                         let content = '<div class="container"><div class="row" style="padding: 0.5em">';
 
@@ -779,7 +794,11 @@ app.post('/customer/advert', (req, res) => {
                                             '<div class="product-name">' + rows[0].productName + '</div><div class="product-id" style="padding-left:0.25em"> (' + rows[0].productType + ')</div>'+
                                         '</div>'+
                                         '<div class="col-6" style="display:flex; align-items:center; justify-content:start; border-bottom: 2px solid;">'+
-                                            '<div class="product-name">' + rows[0].dateAdvert.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + rows[0].dateAdvert.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
+                                            '<div class="product-name">' + 
+                                                rows[0].dateAdvert.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + 
+                                                ' - ' + 
+                                                rows[0].dateAdvert.toLocaleTimeString([], { timeStyle: 'short' }) + 
+                                            '</div>'+
                                         '</div>';
                         }
 
@@ -798,7 +817,6 @@ app.post('/customer/advert', (req, res) => {
                         res.json({"id": data.id, "html":content});
                     }
             });
-
     conn.end();
 });
 app.post('/customer/new_advert', (req,res) => {
@@ -831,9 +849,9 @@ app.post('/customer/new_advert', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.json({"id": data.id, "msg": "The Advertisement was NOT successfully added to the database. Please retry."});
+                    res.json({"error": true, "id": data.id, "msg": "The Advertisement was NOT successfully added to the database. Please retry."});
                 } else {
-                    res.json({"id": data.id, "msg": "The Advertisement was successfully added to the database."});
+                    res.json({"error": false, "id": data.id, "msg": "The Advertisement was successfully added to the database."});
                 }
             } );
 
@@ -901,7 +919,7 @@ app.get('/purchases', (req, res) => {
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
-                        res.send(getErrPage());
+                        res.send(getErrPage('Purchases', 'data'));
                     } else {
                         content += '<div id="purchContainer" class="product-container">';
 
@@ -933,17 +951,12 @@ app.get('/purchases', (req, res) => {
                         }
 
                         content += '</div>';
-                        
-                        
-                        
-                        
                         res.send(base.head  + content + base.foot);
                         conn.end();
                     }
             } );
 });
 app.post('/purchases/receipts', (req,res) => {
-    let pageCount;
     let data = JSON.parse(req.headers.data);
 
     let conn = newConn();
@@ -957,6 +970,7 @@ app.post('/purchases/receipts', (req,res) => {
                     ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
+                        res.json({"id": data.order, "html": getErrTxt('Purchase Reciepts', 'PurchRcpt')});
                     } else {
                         let content = '<div class="container"><div class="row">';
                         let total = 0;
@@ -997,7 +1011,7 @@ app.post('/purchases/receipts', (req,res) => {
                                     '</div>';
 
                         content += '</div></div>';
-
+                        
                         res.json({"id": data.order, "html":content});
                     }
             });
@@ -1031,7 +1045,7 @@ app.post('/purchases/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.send(getErrPage());
+                    res.json({"html": getErrTxt('Purchases', 'data'), "numPages": 0});
                 } else {
                     let content = '';
 
@@ -1061,7 +1075,6 @@ app.post('/purchases/page', (req,res) => {
                                             '</div>'+
                                         '</div>';
                     }
-                    
                     res.json({"html":content, "numPages": pageCount});
                 }
             } );
@@ -1072,7 +1085,7 @@ app.post('/purchases/page', (req,res) => {
 /*-----_____----- Reservations  -----_____-----*/
 app.get('/reservations', (req, res) => {
     let pageCount = 1;
-    let resPerPg = 10; //Purchases shown per page
+    let resPerPg = 10; // Reservations shown per page
     let base = getPageBase("Reservations");
     let conn = newConn();
     conn.connect();
@@ -1127,13 +1140,13 @@ app.get('/reservations', (req, res) => {
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
-                        res.send(getErrPage());
+                        res.send(getErrPage('Reservations', 'data'));
                     } else {
                         content += '<div id="resContainer" class="product-container">';
 
                         for(r of rows)
                         {
-                            content +=  '<div class="product-row" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
+                            content +=  '<div class="product-row" style="cursor:default" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
                                                 '<div class="product-col left">'+
                                                     '<div style="flex-direction: column; justify-content:center">'+
                                                         '<div class="product-name">' + r.resTime.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.resTime.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
@@ -1158,13 +1171,12 @@ app.get('/reservations', (req, res) => {
                                                 '</div>'+
                                             '</div>';
                         }
-
                         content += '</div>';
-                        
+
                         res.send(base.head + content + base.foot);
-                        conn.end();
                     }
             } );
+    conn.end();
 });
 app.post('/reservations/page', (req,res) => {
     let pageCount;
@@ -1191,13 +1203,13 @@ app.post('/reservations/page', (req,res) => {
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
-                        res.send(getErrPage());
+                        res.json({"html": getErrTxt('Reservations', 'data'), "numPages": 0});
                     } else {
                         let content = '';
 
                         for(r of rows)
                         {
-                            content +=  '<div class="product-row" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
+                            content +=  '<div class="product-row" style="cursor:default" onclick="getResDets(`' + r.resTime + '`,`' + r.cID+ '`);">'+
                                                 '<div class="product-col left">'+
                                                     '<div style="flex-direction: column; justify-content:center">'+
                                                         '<div class="product-name">' + r.resTime.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) + ' - ' + r.resTime.toLocaleTimeString([], { timeStyle: 'short' }) + '</div>'+
@@ -1222,8 +1234,7 @@ app.post('/reservations/page', (req,res) => {
                                                 '</div>'+
                                             '</div>';
                         }
-                        
-                        res.json({"html":content, "numPages": pageCount});
+                        res.json({"html": content, "numPages": pageCount});
                     }
                 } );
     conn.end();
@@ -1232,7 +1243,7 @@ app.post('/reservations/page', (req,res) => {
 /*-----_____----- Shipments -----_____-----*/
 app.get('/shipments', (req, res) => {
     let pageCount = 1;
-    let shipPerPg = 10; //Purchases shown per page
+    let shipPerPg = 10; // Shipments shown per page
     let base = getPageBase("Shipments");
     let conn = newConn();
     conn.connect();
@@ -1282,7 +1293,7 @@ app.get('/shipments', (req, res) => {
                 ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
-                        res.send(getErrPage());
+                        res.send(getErrPage('Shipments', 'data'));
                     } else {
                         content += '<div id="shipContainer" class="product-container">';
 
@@ -1307,11 +1318,7 @@ app.get('/shipments', (req, res) => {
                                                 '</div>'+
                                             '</div>';
                         }
-
                         content += '</div>';
-                        
-                        
-                        
                         
                         res.send(base.head  + content + base.foot);
                         conn.end();
@@ -1319,7 +1326,6 @@ app.get('/shipments', (req, res) => {
             } );
 });
 app.post('/shipments/receipts', (req,res) => {
-    let pageCount;
     let data = JSON.parse(req.headers.data);
 
     let conn = newConn();
@@ -1333,6 +1339,7 @@ app.post('/shipments/receipts', (req,res) => {
                     ,(err,rows,fields) => {
                     if (err) {
                         console.log(err);
+                        res.json({"id": data.id, "html": getErrTxt('Shipment Reciepts', 'ShipRcpt')});
                     } else {
                         let content = '<div class="container"><div class="row">';
 
@@ -1383,7 +1390,7 @@ app.post('/shipments/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
-                    res.send(getErrPage());
+                    res.json({"html": getErrTxt('Shipments', 'data'), "numPages": 0});
                 } else {
                     let content = '';
 
@@ -1408,10 +1415,10 @@ app.post('/shipments/page', (req,res) => {
                                         '</div>'+
                                     '</div>';
                     }
-                    
                     res.json({"html":content, "numPages": pageCount});
                 }
-            } );
+            } 
+        );
 
     conn.end();
 });

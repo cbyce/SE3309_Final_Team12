@@ -86,6 +86,10 @@ function showNewAdvert()
     {
         let msg = JSON.parse(this.responseText);
 
-        getCurrAdvert(msg.id, true);
+        alert(msg.msg);
+        
+        if (!msg.error) {
+            getCurrAdvert(msg.id, true);
+        }
     }
 }
