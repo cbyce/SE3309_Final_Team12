@@ -891,7 +891,7 @@ app.get('/purchases', (req, res) => {
             }
         });
 
-    conn.query(`SELECT p.*, SUM(pp.prodCost * pp.qty) orderTotal, e.eFName, e.eLName, c.cFName, c.cLName, c.email 
+    conn.query(`SELECT p.*, SUM(pp.prodCost * pp.qty) orderTotal, e.eFName, e.eLName, e.eID, c.cFName, c.cLName, c.email, c.cID 
                 FROM Purchase p
                 INNER JOIN ProductPurchase pp ON p.orderID = pp.orderID 
                 INNER JOIN Employee e ON p.eID = e.eID 
@@ -920,8 +920,8 @@ app.get('/purchases', (req, res) => {
                                                 '</div>'+
                                                 '<div class="product-col right">'+
                                                     '<div style="flex-direction: column; width: 350px">'+
-                                                        '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Customer:</div><div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div></div>'+
-                                                        '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Employee:</div><div class="product-name">' + r.eFName + ' ' + r.eLName + '</div></div>'+
+                                                        '<div style="display:flex; justify-content:space-between"><div class="product-id" style="padding-right: 15px; display: flex; align-items: center;">Customer (' + r.cID + '):</div><div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div></div>'+
+                                                        '<div style="display:flex; justify-content:space-between"><div class="product-id" style="padding-right: 15px;display: flex; align-items: center;">Employee (' + r.eID + '):</div><div class="product-name">' + r.eFName + ' ' + r.eLName + '</div></div>'+
                                                     '</div>'+
                                                 '</div>'+
                                             '</div>'+
@@ -949,7 +949,7 @@ app.post('/purchases/receipts', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT pp.qty, pp.prodCost, p.productName, p.productType
+    conn.query(`SELECT pp.qty, pp.prodCost, p.productName, p.productType, p.productID
                 FROM ProductPurchase pp
                 INNER JOIN Product p ON pp.productID = p.productID
                 WHERE pp.orderID = "` + data.order + `"
@@ -964,8 +964,12 @@ app.post('/purchases/receipts', (req,res) => {
                         for (r of rows) {
                             total += r.prodCost * r.qty;
 
-                            content +=  '<div class="col-4">'+
+                            content +=  '<div class="col-3">'+
                                             '<div class="product-name">' + r.productName + '</div>'+
+                                        '</div>';
+
+                            content +=  '<div class="col-2" style="display:flex; align-items:center;">'+
+                                            '<div class="product-id" >(' + r.productID + ')</div>'+
                                         '</div>';
 
                             content +=  '<div class="col-2">'+
@@ -982,7 +986,7 @@ app.post('/purchases/receipts', (req,res) => {
                                             '<div class="product-id" style="text-align:right">'+ currency.format(r.prodCost) + '</div>'+
                                         '</div>';
 
-                            content +=  '<div class="col-3">'+
+                            content +=  '<div class="col-2">'+
                                             '<div style="text-align:right">' + currency.format(r.prodCost * r.qty) + '</div>'+
                                         '</div>';
 
@@ -1017,13 +1021,13 @@ app.post('/purchases/page', (req,res) => {
             });
             
 
-    conn.query(`SELECT p.*, SUM(pp.prodCost * pp.qty) orderTotal, e.eFName, e.eLName, c.cFName, c.cLName, c.email 
+    conn.query(`SELECT p.*, SUM(pp.prodCost * pp.qty) orderTotal, e.eFName, e.eLName, e.eID, c.cFName, c.cLName, c.email, c.cID 
                 FROM Purchase p
                 INNER JOIN ProductPurchase pp ON p.orderID = pp.orderID 
                 INNER JOIN Employee e ON p.eID = e.eID 
                 INNER JOIN Customer c ON p.cID = c.cID 
                 GROUP BY orderID
-                ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `, ` + data.count + `;` //ORDER BY ` + data.sort+ ` ect
+                ORDER BY ` + data.sort + ` LIMIT ` + data.page * data.count + `, ` + data.count + `;`
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
@@ -1046,8 +1050,8 @@ app.post('/purchases/page', (req,res) => {
                                             '</div>'+
                                             '<div class="product-col right">'+
                                                 '<div style="flex-direction: column; width: 350px">'+
-                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Customer:</div><div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div></div>'+
-                                                    '<div style="display:flex; justify-content:space-between"><div style="padding-right: 15px">Employee:</div><div class="product-name">' + r.eFName + ' ' + r.eLName + '</div></div>'+
+                                                    '<div style="display:flex; justify-content:space-between"><div class="product-id" style="padding-right: 15px; display: flex; align-items: center;">Customer (' + r.cID + '):</div><div class="product-name"> ' + r.cFName + ' ' + r.cLName  + '</div></div>'+
+                                                    '<div style="display:flex; justify-content:space-between"><div class="product-id" style="padding-right: 15px; display: flex; align-items: center;">Employee (' + r.eID + '):</div><div class="product-name">' + r.eFName + ' ' + r.eLName + '</div></div>'+
                                                 '</div>'+
                                             '</div>'+
                                         '</div>'+
@@ -1321,7 +1325,7 @@ app.post('/shipments/receipts', (req,res) => {
     let conn = newConn();
     conn.connect();
 
-    conn.query(`SELECT ps.productQuantity, p.productName, p.productType
+    conn.query(`SELECT ps.productQuantity, p.productName, p.productType, ps.productID
                 FROM ProductShipment ps
                 INNER JOIN Product p ON ps.productID = p.productID
                 WHERE ps.shipmentID = "` + data.id + `"
@@ -1333,15 +1337,19 @@ app.post('/shipments/receipts', (req,res) => {
                         let content = '<div class="container"><div class="row">';
 
                         for (r of rows) {
-                            content +=  '<div class="col-4">'+
+                            content +=  '<div class="col-3">'+
                                             '<div class="product-name">' + r.productName + '</div>'+
                                         '</div>';
 
-                            content +=  '<div class="col-4">'+
-                                            '<div style="text-align:center">' + r.productType.charAt(0).toUpperCase() + r.productType.slice(1) + '</div>'+
+                            content +=  '<div class="col-3" style="display:flex; align-items:center;">'+
+                                            '<div class="product-id">(' + r.productID + ')</div>'+
                                         '</div>';
 
-                            content +=  '<div class="col-4">'+
+                            content +=  '<div class="col-3">'+
+                                            '<div style="text-align:center">' + r.productType.charAt(0).toUpperCase() + r.productType.slice(1) + '</div>'+
+                                        '</div>';
+                            
+                            content +=  '<div class="col-3">'+
                                             '<div class="product-id" style="text-align:right">' + r.productQuantity + '</div>'+
                                         '</div>';
                         }
