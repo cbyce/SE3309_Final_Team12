@@ -88,7 +88,6 @@ body{
     cursor:pointer;
     color: var(--v-light-green);
     text-decoration: none;
-    transform: rotateY(180deg);
 }
 .line-seperator{
     height: 23px;
@@ -195,4 +194,25 @@ body{
     padding: 0.25em;
     font-weight: bold;
     font-size: 115%;
+}
+
+.legend-col {
+    padding:15px; 
+    display: flex; 
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.legend-txt {
+    padding-top: 5px;
+}
+
+.legend-icon {
+    font-size: 275%;
+    transition:1s;
+}
+
+.legend-icon:hover {
+    transform: rotateY(180deg);
 }
