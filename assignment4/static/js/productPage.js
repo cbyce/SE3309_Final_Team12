@@ -1,13 +1,22 @@
 
 function updateProduct(id)
 {
-    if ($("#" + id + "idBox").val() != "" && $('#' + id + 'prodValid').prop("checked")) {
+    let idVal = $("#" + id + "idBox").val();
+    let name = ( ($("#" + id + "nameBox").val()).charAt(0).toUpperCase() + ($("#" + id + "nameBox").val()).slice(1).toLowerCase() );
+    let qty = parseInt($('#' + id + 'qtyBox').val());
+    let price = parseFloat($('#' + id + 'priceBox').val());
+
+    let validName = name !== "" && name.charAt(0) !== " " && name.length < 50;
+    let validQty = !Number.isNaN(qty) && qty >= 0 && qty < 999999999;
+    let validPrice = !Number.isNaN(price) && price > 0 && price < 10000;
+
+    if (validName && validQty && validPrice && idVal != "" && $('#' + id + 'prodValid').prop("checked")) {
         let data = {
-            "id":   $("#" + id + "idBox").val(),
-            "name": ( ($("#" + id + "nameBox").val()).charAt(0).toUpperCase() + ($("#" + id + "nameBox").val()).slice(1).toLowerCase() ),
+            "id":   idVal,
+            "name": name,
             "type": $("#" + id + "typeBox :selected").val(),
-            "qty":  parseInt($('#' + id + 'qtyBox').val()),
-            "price": parseFloat($('#' + id + 'priceBox').val())
+            "qty":  qty,
+            "price": price
         };
 
         let xReq = new XMLHttpRequest();
@@ -18,22 +27,39 @@ function updateProduct(id)
         xReq.send(); 
     } else {
         $('#' + id + 'prodUptBtn').blur();
+
+        if (!validName) {
+            getInputErr('name', name);
+        } else if (!validQty) {
+            getInputErr('qty', qty);
+        } else if (!validPrice) {
+            getInputErr('price',price);
+        } else if (!$('#' + id + 'prodValid').prop("checked")) {
+            getInputErr('valid', null);
+        } else {
+            getInputErr(null,null);
+        }
     }
 } 
 
 function insertProduct()
 {
+    let name = ($("#nameBox").val()).charAt(0).toUpperCase() + ($("#nameBox").val()).slice(1).toLowerCase();
+    let qty = parseInt($('#qtyBox').val());
+    let price = parseFloat($('#priceBox').val());
+
+    let validName = name !== "" && name.charAt(0) !== " " && name.length < 50;
+    let validQty = !Number.isNaN(qty) && qty >= 0 && qty < 999999999;
+    let validPrice = !Number.isNaN(price) && price > 0 && price < 10000;
     
-    if ($("#nameBox").val() != "" && $("#nameBox").val() != " ") {
+    if (validName && validQty && validPrice) {
         let data = {
             "id":   getRandID(),
-            "name": ( ($("#nameBox").val()).charAt(0).toUpperCase() + ($("#nameBox").val()).slice(1).toLowerCase() ),
+            "name": name,
             "type": $("#typeBox :selected").val(),
-            "qty":  parseInt($('#qtyBox').val()),
-            "price": parseFloat($('#priceBox').val())
+            "qty":  qty,
+            "price": price
         };
-
-        //ADD ERROR HANDELING
 
         let xReq = new XMLHttpRequest();
         xReq.onreadystatechange = displayAlertFeedback;
@@ -43,6 +69,16 @@ function insertProduct()
         xReq.send();
     } else {
         $('#prodAddBtn').blur();
+
+        if (!validName) {
+            getInputErr('name', name);
+        } else if (!validQty) {
+            getInputErr('qty', qty);
+        } else if (!validPrice) {
+            getInputErr('price',price);
+        } else {
+            getInputErr(null,null);
+        }
     }
 }
 
@@ -52,13 +88,21 @@ function displayUpdateFeedback()
     {
         let msg = JSON.parse(this.responseText);
 
+        $('#' + msg.data.id + 'prodUptBtn').blur();
         $('#' + msg.data.id + 'prodValid').prop("checked", false); //Unchecks the validation box
 
         if (!msg.error) {
             $('#' + msg.data.id + 'ProdName').html(msg.data.name);
+            $("#" + msg.data.id + "nameBox").val(msg.data.name);
+
             $('#' + msg.data.id + 'ProdType').html((msg.data.type).charAt(0).toUpperCase() + (msg.data.type).slice(1));
+
             $('#' + msg.data.id + 'ProdPrice').html(msg.data.price);
+            $('#' + msg.data.id + 'priceBox').val(msg.data.price.replace('$',''));
+
             $('#' + msg.data.id + 'ProdQty').html(msg.data.qty);
+            $('#' + msg.data.id + 'qtyBox').val(msg.data.qty);
+
             $('#' + msg.data.id + 'Collapse').collapse('hide');
         } 
         
@@ -138,7 +182,26 @@ function getRandID() {
     }
 
     return id;
+}
 
-    //return Math.random().toString(36).substr(2, 8); //Same as above just only returns lowercase
-
+function getInputErr(type, val)
+{
+    switch (type)
+    {
+        case 'name':
+            alert('The product name entered (' + val + ') is invalid. The name must be shorter that 50 characters and cannot be blank.');
+            break;
+        case 'price':
+            alert('The product price entered (' + val + ') is invalid. The price must be a number between 9999.99 and 0.00, and cannot be blank.');
+            break;
+        case 'qty':
+            alert('The product quantity entered (' + val + ') is invalid. The quantity must be an integer between 0 and 999999999, and cannot be blank.');
+            break;
+        case 'valid':
+            alert('Please ensure to check the validation box before updating a product.');
+            break;
+        default:
+            alert('An error occured when trying to insert/update a product.\nPlease retry or refresh the page.');
+            break;
+    }
 }
