@@ -81,12 +81,14 @@ body{
     color: var(--med-green);
 }
 .nav-btn {
+    transition:0.4s;
     color: var(--c-med-green);;
 }
 .nav-btn:hover{
     cursor:pointer;
     color: var(--v-light-green);
     text-decoration: none;
+    transform: rotateY(180deg);
 }
 .line-seperator{
     height: 23px;
@@ -169,6 +171,7 @@ body{
     font-size: 125%;
 }
 
+/*-----_____----- Home page -----_____-----*/
 .home-col{
     display:flex; 
     flex-direction: column; 

@@ -45,27 +45,27 @@ function getPageBase(pageTitle) {
                                     
                                     '<div class="line-seperator"></div>'+
                                     
-                                    '<a id="product-btn" class="btn-round nav-btn" href="/products"><i class="fas fa-cannabis"></i></a>'+
+                                    '<a id="product-btn" class="btn-round nav-btn' + ( (pageTitle == "Products") ? ' active': '') + '" href="/products"><i class="fas fa-cannabis"></i></a>'+
                                     
                                     '<div class="line-seperator"></div>'+
                         
-                                    '<a id="customers-btn" class="btn-round nav-btn" href="/customers"><i class="fas fa-users"></i></a>'+
+                                    '<a id="customers-btn" class="btn-round nav-btn' + ( (pageTitle == "Customers") ? ' active': '') + '" href="/customers"><i class="fas fa-users"></i></a>'+
                             
                                     '<div class="line-seperator"></div>'+
                                     
-                                    '<a id="employee-btn" class="btn-round nav-btn" href="/employees"><i class="fas fa-id-badge"></i></a>'+
+                                    '<a id="employee-btn" class="btn-round nav-btn' + ( (pageTitle == "Employees") ? ' active': '') + '" href="/employees"><i class="fas fa-id-badge"></i></a>'+
                                     
                                     '<div class="line-seperator"></div>'+
                                     
-                                    '<a id="reservation-btn" class="btn-round nav-btn" href="/reservations"><i class="fas fa-calendar"></i></a>'+
+                                    '<a id="reservation-btn" class="btn-round nav-btn' + ( (pageTitle == "Reservations") ? ' active': '') + '" href="/reservations"><i class="fas fa-calendar"></i></a>'+
                             
                                     '<div class="line-seperator"></div>'+
                             
-                                    '<a id="shipment-btn" class="btn-round nav-btn" href="/shipments"><i class="fas fa-ship"></i></a>'+
+                                    '<a id="shipment-btn" class="btn-round nav-btn' + ( (pageTitle == "Shipments") ? ' active': '') + '" href="/shipments"><i class="fas fa-ship"></i></a>'+
 
                                     '<div class="line-seperator"></div>'+
     
-                                    '<a id="shipment-btn" class="btn-round nav-btn" href="/purchases"><i class="fas fa-receipt"></i></a>'+
+                                    '<a id="shipment-btn" class="btn-round nav-btn' + ( (pageTitle == "Purchases") ? ' active': '') + '" href="/purchases"><i class="fas fa-receipt"></i></a>'+
                                 '</div>'+
                             '</div>'+
                             '<div class="default-page">',
@@ -80,11 +80,7 @@ function getPageBase(pageTitle) {
                             '</div>'+
                         
                             '<div class="footer nav-right">'+
-                                '<a id="home-btn-footer" class="nav-btn">Home</a>'+
-                                '<div class="line-seperator"></div>'+
-                                '<a id="about-btn" class="nav-btn">About</a>'+
-                                '<div class="line-seperator"></div>'+
-                                '<a id="contact-btn" class="nav-btn" style="cursor:pointer">Contact</a>'+
+                                '<a id="home-btn-footer" class="nav-btn" href="/">Home</a>' +
                             '</div>'+
                         '</div>'+
                     '</body>'+
@@ -175,6 +171,11 @@ app.get('/products', (req,res) => {
         ,(err,rows,fields) => {
             if (err) {
                 console.log(err);
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Error Loading Page Count. Please Refresh Page. '+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
             } else {
                 pageCount = Math.ceil(rows[0]['COUNT(*)'] / prodPerPg);
 
@@ -315,6 +316,7 @@ app.post('/products/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
+                    pageCount = 0;
                 } else {
                     pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
                 }
@@ -473,6 +475,11 @@ app.get('/employees', (req,res) => {
         ,(err,rows,fields) => {
             if (err) {
                 console.log(err);
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Error Loading Page Count. Please Refresh Page. '+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
             } else {
                 pageCount = Math.ceil(rows[0]['COUNT(*)'] / empPerPg);
 
@@ -542,6 +549,7 @@ app.post('/employees/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
+                    pageCount = 0;
                 } else {
                     pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
                 }
@@ -628,6 +636,11 @@ app.get('/customers', (req,res) => {
         ,(err,rows,fields) => {
             if (err) {
                 console.log(err);
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Error Loading Page Count. Please Refresh Page. '+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
             } else {
                 pageCount = Math.ceil(rows[0]['COUNT(*)'] / custPerPg);
 
@@ -709,6 +722,7 @@ app.post('/customer/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
+                    pageCount = 0;
                 } else {
                     pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
                 }
@@ -896,6 +910,11 @@ app.get('/purchases', (req, res) => {
         ,(err,rows,fields) => {
             if (err) {
                 console.log(err);
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Error Loading Page Count. Please Refresh Page. '+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
             } else {
                 pageCount = Math.ceil(rows[0]['COUNT(*)'] / purchPerPg);
 
@@ -1029,6 +1048,7 @@ app.post('/purchases/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
+                    pageCount = 0;
                 } else {
                     pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
                 }
@@ -1119,6 +1139,11 @@ app.get('/reservations', (req, res) => {
         ,(err,rows,fields) => {
             if (err) {
                 console.log(err);
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Error Loading Page Count. Please Refresh Page. '+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
             } else {
                 pageCount = Math.ceil(rows[0]['COUNT(*)'] / resPerPg);
 
@@ -1189,6 +1214,7 @@ app.post('/reservations/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
+                    pageCount = 0;
                 } else {
                     pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
                 }
@@ -1276,6 +1302,11 @@ app.get('/shipments', (req, res) => {
         ,(err,rows,fields) => {
             if (err) {
                 console.log(err);
+                content +=  '<div class="col-4" style="text-align:right">'+
+                                'Error Loading Page Count. Please Refresh Page. '+
+                            '</div>'+
+                        '</div>'+
+                    '</div>';
             } else {
                 pageCount = Math.ceil(rows[0]['COUNT(*)'] / shipPerPg);
 
@@ -1380,6 +1411,7 @@ app.post('/shipments/page', (req,res) => {
             ,(err,rows,fields) => {
                 if (err) {
                     console.log(err);
+                    pageCount = 0;
                 } else {
                     pageCount = Math.ceil(rows[0]['COUNT(*)'] / data.count);
                 }
